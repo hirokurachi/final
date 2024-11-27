@@ -1,0 +1,54 @@
+---
+title: "Final Project"
+author: "Luis Señires(id: ldsenires, section:1), Hiroaki Kurachi(id: hiroakik, section:2)"
+date: today
+format: 
+  pdf:
+    include-in-header: 
+       text: |
+         \usepackage{fvextra}
+         \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+include-before-body:
+  text: |
+    \RecustomVerbatimEnvironment{verbatim}{Verbatim}{
+      showspaces = false,
+      showtabs = false,
+      breaksymbolleft={},
+      breaklines
+    }
+---
+
+```{python} 
+# Import required packages.
+import zipfile
+import os
+import pandas as pd
+import altair as alt
+import pandas as pd
+from datetime import date, time
+import numpy as np
+import re
+import request
+import json
+alt.renderers.enable("png")
+alt.data_transformers.disable_max_rows() 
+```
+
+
+```{python}
+# Load original datasets
+path_data = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final\data")
+
+path_issuance = os.path.join(
+    path_data,
+    "green bonds issuance.csv"
+)
+df_issuance = pd.read_csv(path_issuance, skiprows=10)
+
+path_emission = os.path.join(
+    path_data,
+    "35d2dc7f-8c17-4948-98fd-bf459e6a75cc_Data.csv"
+)
+df_emission = pd.read_csv(path_emission, on_bad_lines="skip")
+
+```
