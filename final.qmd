@@ -143,7 +143,7 @@ df_issuance = df_issuance.merge(
 ```{python}
 # Clean df_issuance, align with df_emission
 df_issuance = df_issuance[(df_issuance["Date"] != "2023") & (
-    df_issuance["Date"] != "Sep-2024")].reset_index(drop=True).rename(columns={"Date":"Year"})
+    df_issuance["Date"] != "Sep-2024")].reset_index(drop=True).rename(columns={"Date": "Year"})
 df_issuance = df_issuance.apply(lambda x: np.where(x == 0.0, np.nan, x))
 df_issuance["Year"] = df_issuance["Year"].astype(int)
 ```
@@ -158,7 +158,13 @@ df_base = df_issuance.merge(
 )
 df_base = df_base.drop(["Economy"], axis=1)
 
-df_base = df_base[["Country Name", "Country Code"]].join(df_base.drop(["Country Name", "Country Code"], axis=1))
+df_base = df_base[["Country Name", "Country Code"]].join(
+    df_base.drop(["Country Name", "Country Code"], axis=1))
 
-df_base.to_csv("base.csv")
+path_base = os.path.join(
+    path_data,
+    "base.csv"
+)
+
+df_base.to_csv(path_base)
 ```
