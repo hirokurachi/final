@@ -1,6 +1,6 @@
 ---
 title: "Final Project"
-author: "Luis Señires(id: ldsenires, section:1), Hiroaki Kurachi(id: hiroakik, section:2)"
+author: "Luis Señires(username: ldsenires, section: 1), Hiroaki Kurachi(username: hirokurachi, section: 2)"
 date: today
 format: 
   pdf:
@@ -167,4 +167,12 @@ path_base = os.path.join(
 )
 
 df_base.to_csv(path_base)
+```
+
+
+```{python}
+chart_test = alt.Chart(df_base).mark_line().encode(
+    alt.X(),
+    alt.Y()
+)
 ```
