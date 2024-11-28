@@ -49,15 +49,21 @@ alt.data_transformers.disable_max_rows()
         - add the column to the base df, changing the column name
 ```{python}
 # Load 2024 index dataset
-path_index = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final\data\index")
+path_cwd = (
+    r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final"
+)
+path_index = os.path.join(
+    path_cwd, r"data\index"
+)
 path_index_2024 = os.path.join(
-    path_index,
-    "epi2024results.csv"
+    path_index, "epi2024results.csv"
 )
 df_index = pd.read_csv(path_index_2024)
 
 # Extract column including Index values
-df_index = df_index[["iso","country" , "EPI.new"]].rename({"EPI.new": 2024}, axis=1)
+df_index = df_index[["iso", "country", "EPI.new"]].rename(
+    {"EPI.new": 2024}, axis=1
+)
 ```
 
 ```{python}
@@ -71,10 +77,19 @@ for year in range(2016, 2024, 2):
     }
     df_add = pd.read_excel(path_index_add, sheet_name=sheet[year])
     if year == 2016:
-        df_add = df_add.rename({"Country": "country", "ISO3": "iso", "2016 EPI Score": "EPI.new"}, axis=1)
+        df_add = df_add.rename(
+            {"Country": "country", "ISO3": "iso", "2016 EPI Score": "EPI.new"}, 
+            axis=1
+        )
     elif year == 2018:
-        df_add = df_add.rename({"EPI.current": "EPI.new"}, axis=1)
-    df_add = df_add[["country", "iso", "EPI.new"]].rename({"EPI.new": year}, axis = 1)
+        df_add = df_add.rename(
+            {"EPI.current": "EPI.new"}, 
+            axis=1
+        )
+    df_add = df_add[["country", "iso", "EPI.new"]].rename(
+        {"EPI.new": year}, 
+        axis=1
+    )
     df_index = df_index.merge(
         df_add,
         on=["iso", "country"],
@@ -100,11 +115,12 @@ df_index = df_index.melt(
 
 ```{python}
 # Load bond issuance dataset
-path_data = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final\data")
+path_data = os.path.join(
+    path_cwd, "data"
+)
 
 path_issuance = os.path.join(
-    path_data,
-    "green bonds issuance.csv"
+    path_data, "green bonds issuance.csv"
 )
 df_issuance = pd.read_csv(path_issuance, skiprows=10)
 ```
@@ -114,33 +130,53 @@ df_issuance = pd.read_csv(path_issuance, skiprows=10)
 countries_index = df_index[["country", "iso"]].value_counts().reset_index(
 ).sort_values(by="iso", ascending=True)
 
-countries_index = countries_index[countries_index["country"].isin(["Indonesia", "Japan", "Cambodia", "South Korea", "Laos", "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam"])].reset_index(drop=True).drop("count", axis=1)  # Drop China, Hongkong not included in dataset
+countries_index = countries_index[countries_index["country"].isin(
+    ["Indonesia", "Japan", "Cambodia", "South Korea", "Laos",
+        "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam"]
+)].reset_index(drop=True).drop(
+    "count", 
+    axis=1
+)  # Drop China (outlier)
 
 # Identify corresponding iso("Economy" column) in df_issuance
 countries_issuance = df_issuance["Economy"].value_counts().reset_index().sort_values(
-    by="Economy", ascending=True)
+    by="Economy", 
+    ascending=True
+)
 
-countries_issuance = countries_issuance[~countries_issuance["Economy"].isin(["CN", "HK"])].reset_index(drop=True).drop("count", axis=1)
+countries_issuance = countries_issuance[~countries_issuance["Economy"].isin(
+    ["CN", "HK"]
+)].reset_index(drop=True).drop(
+    "count", 
+    axis=1
+)  # Drop China (outlier) and Hong Kong (not included in original df_index)
 
-# Join dataframes for country code
+# Create crosswalk from country lists
 crosswalk = pd.concat([countries_issuance, countries_index], axis=1)
+```
 
+```{python}
+# Filter df_index by country
+df_index = df_index[df_index["country"].isin(
+    ["Indonesia", "Japan", "Cambodia", "South Korea", "Laos",
+        "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam"]
+)].reset_index(drop=True)
+```
+
+```{python}
 # Merge crosswalk to df_issuance
 df_issuance = df_issuance.merge(
     crosswalk,
     on="Economy",
     how="inner"
 )
-```
 
-```{python}
 # Clean df_issuance, align with df_index
 df_issuance = df_issuance.rename(columns={"Date": "Year"})
 df_issuance = df_issuance.apply(lambda x: np.where(x == 0.0, np.nan, x))
 df_issuance = df_issuance.replace("Sep-2024", "2024").infer_objects(copy=False)
 df_issuance["Year"] = df_issuance["Year"].astype(int)
 ```
-
 
 ```{python}
 # Merge DFs by Country Code and Date/Year
@@ -151,13 +187,55 @@ df_base = df_issuance.merge(
 )
 df_base = df_base.drop(["Economy"], axis=1)
 
-df_base = df_base[["country", "iso"]].join(df_base.drop(["country", "iso"], axis=1)).rename({"country": "Country Name", "iso": "Country Code"}, axis=1)
+df_base = df_base[["country", "iso"]].join(
+    df_base.drop(["country", "iso"], axis=1)
+).rename({"country": "Country Name", "iso": "Country Code"}, axis=1)
 
 # Save the dataset as csv file
 path_base = os.path.join(
-    path_data,
-    "base.csv"
+    path_data, "base.csv"
 )
 
 df_base.to_csv(path_base)
+```
+
+```{python}
+# Set path to save pictures
+path_picture = os.path.join(
+    path_cwd, "picture"
+)
+```
+
+```{python}
+# Plot EPI over year
+chart_index = alt.Chart(df_index).mark_line().encode(
+    alt.X("Year:O"),
+    alt.Y("EPI:Q", scale=alt.Scale(zero=False)),
+    alt.Color("country:N", legend=None)
+).properties(
+    width=500,
+    height=500
+)
+
+chart_index_text = alt.Chart(df_index).transform_filter(
+    "datum.Year == 2024"
+).mark_text(
+    align="left", baseline="middle", dx=7
+).encode(
+    text="country:N",
+    x="Year:O",
+    y="EPI:Q",
+    color="country:N"
+)
+
+chart_index = chart_index + chart_index_text
+
+chart_index.show()
+
+# Save the plot as png
+os.makedirs(path_picture, exist_ok=True)
+path_picture_index = os.path.join(
+    path_picture, "chart_index.png"
+)
+chart_index.save(path_picture_index)
 ```
