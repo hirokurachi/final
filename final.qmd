@@ -34,44 +34,63 @@ alt.renderers.enable("png")
 alt.data_transformers.disable_max_rows() 
 ```
 
+# Data wrangling
 
+- Create df_index
+
+    - Extract column including Index values from 2024 result CSV, changing the column name (-> base df)
+
+    - Iterate below process for each year's result CSV till 2022
+
+        - Extract column including Index values
+
+        - Sort the rows (countries) aligned with 2024 data
+
+        - add the column to the base df, changing the column name
 ```{python}
-# Load original datasets
-path_data = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final\data")
-
-path_issuance = os.path.join(
-    path_data,
-    "green bonds issuance.csv"
+# Load 2024 index dataset
+path_index = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final\data\index")
+path_index_2024 = os.path.join(
+    path_index,
+    "epi2024results.csv"
 )
-df_issuance = pd.read_csv(path_issuance, skiprows=10)
+df_index = pd.read_csv(path_index_2024)
 
-path_emission = os.path.join(
-    path_data,
-    "35d2dc7f-8c17-4948-98fd-bf459e6a75cc_Data.csv"
-)
-df_emission = pd.read_csv(path_emission, on_bad_lines="skip")
+# Extract column including Index values
+df_index = df_index[["iso","country" , "EPI.new"]].rename({"EPI.new": 2024}, axis=1)
 ```
 
-# Data wrangling
-Goal: Merge df_emission into df_issuance, by melting df_emission by year
+```{python}
+# Add each year's result to the dataset from CSVs
+for year in range(2016, 2024, 2):
+    path_index_add = os.path.join(
+        path_index, f"{year}-epi.xlsx"
+    )
+    sheet = {
+        2016: 2, 2018: 3, 2020: 4, 2022: 4
+    }
+    df_add = pd.read_excel(path_index_add, sheet_name=sheet[year])
+    if year == 2016:
+        df_add = df_add.rename({"Country": "country", "ISO3": "iso", "2016 EPI Score": "EPI.new"}, axis=1)
+    elif year == 2018:
+        df_add = df_add.rename({"EPI.current": "EPI.new"}, axis=1)
+    df_add = df_add[["country", "iso", "EPI.new"]].rename({"EPI.new": year}, axis = 1)
+    df_index = df_index.merge(
+        df_add,
+        on=["iso", "country"],
+        how="inner"
+    )
 
-- Clean df_emission
+# Change the columns order
+df_index = df_index[["country", "iso", 2016, 2018, 2020, 2022, 2024]]
 
-    - remove redundant rows (metadata, etc. contained)
-
-    - Replace erroneous value by NA
-
-    - Drop 2023 columns, as all data is NA
-
-    - Filter series name: focus on total emissions and total per capita excluding LULUCF (drop "% change from 1990" and "including LULUCF")
-
-    - Melt by year
-
-    - Pivot "Series Name" to make them as distinct columns
-
-- Create crosswalk between df_emission and df_issuance
-
-    - Replace "Economy" column in df_issuance, align with "Country Code" in df_emission
+# Melt the dataset by year
+df_index = df_index.melt(
+    id_vars=["country", "iso"],
+    var_name="Year",
+    value_name="EPI"
+).sort_values(["iso", "Year"], ascending=True).reset_index(drop=True)
+```
 
 - Clean df_issuance
 
@@ -79,57 +98,32 @@ Goal: Merge df_emission into df_issuance, by melting df_emission by year
 
     - Replace 0.0 by NA?
 
-- Merge DFs by Country Code
-
-
 ```{python}
-# Clean df_emission
-df_emission = df_emission.iloc[0:56]
-df_emission = df_emission.apply(lambda x: np.where(x == "..", np.nan, x))
+# Load bond issuance dataset
+path_data = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final\data")
 
-# Drop 2023 column, as all data is NA
-df_emission = df_emission.drop("2023 [YR2023]", axis=1)
-
-# Filter by "Series Name" column
-df_emission = df_emission[(df_emission["Series Code"] == "EN.GHG.ALL.MT.CE.AR5") | (
-    df_emission["Series Code"] == "EN.GHG.ALL.PC.CE.AR5")]
-
-# Melt by year
-df_emission = df_emission.melt(
-    id_vars=["Country Name", "Country Code", "Series Name", "Series Code"],
-    var_name="Year",
-    value_name="Total Emission"
-).sort_values(["Country Code", "Year", "Series Code"], ascending=True).reset_index(drop=True).drop("Series Code", axis=1)
-
-# Clean year name
-df_emission["Year"] = df_emission["Year"].str[:4].astype(int)
-
-# Pivot by "Series Name" to make them as distinct columns
-df_emission = df_emission.pivot(
-    index=["Country Name", "Country Code", "Year"],
-    columns="Series Name",
-    values="Total Emission"
-).reset_index().rename(
-    columns={"Total greenhouse gas emissions excluding LULUCF (Mt CO2e)": "Total Emissions",
-             "Total greenhouse gas emissions excluding LULUCF per capita (t CO2e/capita)": "Total Emissions per capita"}
+path_issuance = os.path.join(
+    path_data,
+    "green bonds issuance.csv"
 )
+df_issuance = pd.read_csv(path_issuance, skiprows=10)
 ```
 
-
 ```{python}
-# Drop Brunei and Myanmar from df_emission
-df_emission = df_emission[(df_emission["Country Code"] != "BRN") & (
-    df_emission["Country Code"] != "MMR")]
+# Identify corresponding country name and iso in df_index
+countries_index = df_index[["country", "iso"]].value_counts().reset_index(
+).sort_values(by="iso", ascending=True)
 
-# Identify corresponding country codes between DFs
-countries_emission = df_emission[["Country Name", "Country Code"]].value_counts().reset_index(
-).sort_values(by="Country Code", ascending=True).reset_index(drop=True).drop("count", axis=1)
+countries_index = countries_index[countries_index["country"].isin(["Indonesia", "Japan", "Cambodia", "South Korea", "Laos", "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam"])].reset_index(drop=True).drop("count", axis=1)  # Drop China, Hongkong not included in dataset
+
+# Identify corresponding iso("Economy" column) in df_issuance
 countries_issuance = df_issuance["Economy"].value_counts().reset_index().sort_values(
-    by="Economy", ascending=True).reset_index(drop=True).drop("count", axis=1)
+    by="Economy", ascending=True)
+
+countries_issuance = countries_issuance[~countries_issuance["Economy"].isin(["CN", "HK"])].reset_index(drop=True).drop("count", axis=1)
 
 # Join dataframes for country code
-crosswalk = pd.concat([countries_issuance, countries_emission], axis=1).drop(
-    "Country Name", axis=1)
+crosswalk = pd.concat([countries_issuance, countries_index], axis=1)
 
 # Merge crosswalk to df_issuance
 df_issuance = df_issuance.merge(
@@ -139,12 +133,11 @@ df_issuance = df_issuance.merge(
 )
 ```
 
-
 ```{python}
-# Clean df_issuance, align with df_emission
-df_issuance = df_issuance[(df_issuance["Date"] != "2023") & (
-    df_issuance["Date"] != "Sep-2024")].reset_index(drop=True).rename(columns={"Date": "Year"})
+# Clean df_issuance, align with df_index
+df_issuance = df_issuance.rename(columns={"Date": "Year"})
 df_issuance = df_issuance.apply(lambda x: np.where(x == 0.0, np.nan, x))
+df_issuance = df_issuance.replace("Sep-2024", "2024").infer_objects(copy=False)
 df_issuance["Year"] = df_issuance["Year"].astype(int)
 ```
 
@@ -152,27 +145,19 @@ df_issuance["Year"] = df_issuance["Year"].astype(int)
 ```{python}
 # Merge DFs by Country Code and Date/Year
 df_base = df_issuance.merge(
-    df_emission,
-    on=["Country Code", "Year"],
-    how="inner"
+    df_index,
+    on=["iso", "Year", "country"],
+    how="left"
 )
 df_base = df_base.drop(["Economy"], axis=1)
 
-df_base = df_base[["Country Name", "Country Code"]].join(
-    df_base.drop(["Country Name", "Country Code"], axis=1))
+df_base = df_base[["country", "iso"]].join(df_base.drop(["country", "iso"], axis=1)).rename({"country": "Country Name", "iso": "Country Code"}, axis=1)
 
+# Save the dataset as csv file
 path_base = os.path.join(
     path_data,
     "base.csv"
 )
 
 df_base.to_csv(path_base)
-```
-
-
-```{python}
-chart_test = alt.Chart(df_base).mark_line().encode(
-    alt.X(),
-    alt.Y()
-)
 ```
