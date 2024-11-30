@@ -49,9 +49,9 @@ alt.data_transformers.disable_max_rows()
         - add the column to the base df, changing the column name
 ```{python}
 # Load 2024 index dataset
-path_cwd = (
-    r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final"
-)
+# path_cwd = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final")
+path_cwd = (r"C:\Users\LUIS\Documents\GitHub\final")
+
 path_index = os.path.join(
     path_cwd, r"data\index"
 )
@@ -114,15 +114,40 @@ df_index = df_index.melt(
     - Replace 0.0 by NA?
 
 ```{python}
-# Load bond issuance dataset
+# Load bond issuance datasets
 path_data = os.path.join(
     path_cwd, "data"
 )
 
-path_issuance = os.path.join(
+path_green_issuance = os.path.join(
     path_data, "green bonds issuance.csv"
 )
-df_issuance = pd.read_csv(path_issuance, skiprows=10)
+df_green_issuance = pd.read_csv(path_green_issuance, skiprows=10)
+
+path_sustainability_issuance = os.path.join(
+    path_data, "sustainability bonds issuance.csv"
+)
+df_sustainability_issuance = pd.read_csv(
+    path_sustainability_issuance, skiprows=10)
+```
+
+```{python}
+# Merge bond datasets
+df_bonds = df_green_issuance.merge(
+    df_sustainability_issuance, on=["Economy", "Date"])
+
+df_bonds = df_bonds.rename(columns={
+    "Government FCY(USD millions)_x": "govt_fcy_green",
+    "Corporate FCY(USD millions)_x": "corp_fcy_green",
+    "Government LCY(USD millions)_x": "govt_lcy_green",
+    "Corporate LCY(USD millions)_x": "corp_lcy_green",
+    "Total(USD millions)_x": "total_green",
+    "Government FCY(USD millions)_y": "govt_fcy_sustainability",
+    "Corporate FCY(USD millions)_y": "corp_fcy_sustainability",
+    "Government LCY(USD millions)_y": "govt_lcy_sustainability",
+    "Corporate LCY(USD millions)_y": "corp_lcy_sustainability",
+    "Total(USD millions)_y": "total_sustainability",
+})
 ```
 
 ```{python}
@@ -139,7 +164,7 @@ countries_index = countries_index[countries_index["country"].isin(
 )  # Drop China (outlier)
 
 # Identify corresponding iso("Economy" column) in df_issuance
-countries_issuance = df_issuance["Economy"].value_counts().reset_index().sort_values(
+countries_issuance = df_bonds["Economy"].value_counts().reset_index().sort_values(
     by="Economy", 
     ascending=True
 )
@@ -165,22 +190,22 @@ df_index = df_index[df_index["country"].isin(
 
 ```{python}
 # Merge crosswalk to df_issuance
-df_issuance = df_issuance.merge(
+df_bonds = df_bonds.merge(
     crosswalk,
     on="Economy",
     how="inner"
 )
 
 # Clean df_issuance, align with df_index
-df_issuance = df_issuance.rename(columns={"Date": "Year"})
-df_issuance = df_issuance.apply(lambda x: np.where(x == 0.0, np.nan, x))
-df_issuance = df_issuance.replace("Sep-2024", "2024").infer_objects(copy=False)
-df_issuance["Year"] = df_issuance["Year"].astype(int)
+df_bonds = df_bonds.rename(columns={"Date": "Year"})
+df_bonds = df_bonds.apply(lambda x: np.where(x == 0.0, np.nan, x))
+df_bonds = df_bonds.replace("Sep-2024", "2024").infer_objects(copy=False)
+df_bonds["Year"] = df_bonds["Year"].astype(int)
 ```
 
 ```{python}
 # Merge DFs by Country Code and Date/Year
-df_base = df_issuance.merge(
+df_base = df_bonds.merge(
     df_index,
     on=["iso", "Year", "country"],
     how="left"
@@ -238,4 +263,19 @@ path_picture_index = os.path.join(
     path_picture, "chart_index.png"
 )
 chart_index.save(path_picture_index)
+```
+
+
+```{python}
+# Plot issuances per year
+chart_bonds = alt.Chart(df_bonds).mark_bar().encode(
+    alt.X("Year:O"),
+    alt.Y("total_green:Q"),
+    alt.Color("Economy:N")
+).properties(
+    width=500,
+    height=500
+)
+
+chart_bonds
 ```
