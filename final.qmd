@@ -181,10 +181,18 @@ crosswalk = pd.concat([countries_issuance, countries_index], axis=1)
 ```
 
 ```{python}
+# Create average row
+df_mean = df_index.groupby("Year").agg(
+    EPI = ("EPI", "mean")
+).reset_index()
+df_mean[["country", "iso"]] = "average"
+df_mean = df_mean[["country", "iso"]].join(df_mean.drop(["country", "iso"], axis=1))
+df_index = pd.concat([df_index, df_mean])
+
 # Filter df_index by country
 df_index = df_index[df_index["country"].isin(
     ["Indonesia", "Japan", "Cambodia", "South Korea", "Laos",
-        "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam"]
+        "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam", "average"]
 )].reset_index(drop=True)
 ```
 
@@ -193,7 +201,7 @@ df_index = df_index[df_index["country"].isin(
 df_bonds = df_bonds.merge(
     crosswalk,
     on="Economy",
-    how="inner"
+    how="left"
 )
 
 # Clean df_issuance, align with df_index
