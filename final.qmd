@@ -49,8 +49,8 @@ alt.data_transformers.disable_max_rows()
         - add the column to the base df, changing the column name
 ```{python}
 # Load 2024 index dataset
-path_cwd = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final")
-# path_cwd = (r"C:\Users\LUIS\Documents\GitHub\final")
+# path_cwd = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final")
+path_cwd = (r"C:\Users\LUIS\Documents\GitHub\final")
 
 path_index = os.path.join(
     path_cwd, r"data\index"
@@ -307,4 +307,36 @@ path_picture_bonds = os.path.join(
     path_picture, "chart_bonds.png"
 )
 chart_bonds.save(path_picture_bonds)
+```
+
+
+- observations (with plots above and the bonds plot without Japan and Korea (below)):
+
+    - 2022-2024: countries with falling EPI (Cambodia, Philippines and Laos) issue less bonds. But countries with rising EPI (Thailand, Malaysia, Indonesia) also issue less bonds.
+
+    - 2020-2022: countries keeping EPI flat (Cambodia, Laos) still issue less bonds
+
+    - *2018-2020: Thailand experienced an improvement in EPI as well as Japan and South Korea, with significant increase in bonds issuance(2019, 2020)*
+
+    - 2016-2018: Thailand experienced a falling in EPI, which might be associated with decrease in bonds issue in 2017. Singapore and Malaysia increased bonds issuance from scratch, but the EPI decreases sharply.
+
+    - countries constantly issuing bonds seems to keep higher EPI scores (primarily Japan, Singapore and South Korea. Then Thailand and Malaysia). But Indonesia suffers worse EPI despite its constant bonds issuance. Philippins is also same, though its bonds issuance are less constant
+
+
+
+
+```{python}
+# Plot issuances per year
+df_base_nonJPSK = df_base[(df_base["Country Name"] != "Japan")&(df_base["Country Name"] != "South Korea")]
+
+chart_bonds_nonJPSK = alt.Chart(df_base_nonJPSK).mark_bar().encode(
+    alt.X("Year:O"),
+    alt.Y("total_green:Q"),
+    alt.Color("Country Name:N")
+).properties(
+    width=500,
+    height=500
+)
+
+chart_bonds_nonJPSK.show()
 ```
