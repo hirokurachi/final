@@ -36,7 +36,7 @@ alt.data_transformers.disable_max_rows()
 
 # Data wrangling
 
-- Create df_index
+## Create df_index
 
     - Extract column including Index values from 2024 result CSV, changing the column name (-> base df)
 
@@ -49,8 +49,8 @@ alt.data_transformers.disable_max_rows()
         - add the column to the base df, changing the column name
 ```{python}
 # Load 2024 index dataset
-# path_cwd = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final")
-path_cwd = (r"C:\Users\LUIS\Documents\GitHub\final")
+path_cwd = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final")
+# path_cwd = (r"C:\Users\LUIS\Documents\GitHub\final")
 
 path_index = os.path.join(
     path_cwd, r"data\index"
@@ -107,7 +107,38 @@ df_index = df_index.melt(
 ).sort_values(["iso", "Year"], ascending=True).reset_index(drop=True)
 ```
 
-- Clean df_issuance
+```{python}
+# Create world average row
+df_mean = df_index.groupby("Year").agg(
+    EPI = ("EPI", "mean")
+).reset_index()
+df_mean[["country", "iso"]] = "world average"
+df_mean = df_mean[["country", "iso"]].join(df_mean.drop(["country", "iso"], axis=1))
+df_index = pd.concat([df_index, df_mean])
+
+# Filter df_index by country
+df_index = df_index[df_index["country"].isin(
+    ["Indonesia", "Japan", "Cambodia", "South Korea", "Laos",
+        "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam", "world average"]
+)].reset_index(drop=True)
+```
+
+```{python}
+# Create new column of "EPI gap from average"
+def epi_average(year):
+    """Return average EPI for corresponding year"""
+    df_average = df_mean[(df_mean["Year"] == year) & (
+        df_mean["country"] == "world average")]
+    average = df_average.iloc[0]["EPI"]
+    return average
+
+df_index["EPI average"] = [epi_average(x) for x in df_index["Year"]]
+df_index["EPI gap from average"] = df_index["EPI"] - \
+    df_index["EPI average"]
+df_index = df_index[df_index["country"] != "world average"]
+```
+
+## Clean df_bonds
 
     - Drop observations in 2023 and Sep-2024
 
@@ -150,6 +181,8 @@ df_bonds = df_bonds.rename(columns={
 })
 ```
 
+## Create crosswalk
+
 ```{python}
 # Identify corresponding country name and iso in df_index
 countries_index = df_index[["country", "iso"]].value_counts().reset_index(
@@ -163,13 +196,13 @@ countries_index = countries_index[countries_index["country"].isin(
     axis=1
 )  # Drop China (outlier)
 
-# Identify corresponding iso("Economy" column) in df_issuance
-countries_issuance = df_bonds["Economy"].value_counts().reset_index().sort_values(
+# Identify corresponding iso("Economy" column) in df_bonds
+countries_bonds = df_bonds["Economy"].value_counts().reset_index().sort_values(
     by="Economy", 
     ascending=True
 )
 
-countries_issuance = countries_issuance[~countries_issuance["Economy"].isin(
+countries_bonds = countries_bonds[~countries_bonds["Economy"].isin(
     ["CN", "HK"]
 )].reset_index(drop=True).drop(
     "count", 
@@ -177,34 +210,19 @@ countries_issuance = countries_issuance[~countries_issuance["Economy"].isin(
 )  # Drop China (outlier) and Hong Kong (not included in original df_index)
 
 # Create crosswalk from country lists
-crosswalk = pd.concat([countries_issuance, countries_index], axis=1)
+crosswalk = pd.concat([countries_bonds, countries_index], axis=1)
 ```
 
+## Merge DFs
 ```{python}
-# Create world average row
-df_mean = df_index.groupby("Year").agg(
-    EPI = ("EPI", "mean")
-).reset_index()
-df_mean[["country", "iso"]] = "world average"
-df_mean = df_mean[["country", "iso"]].join(df_mean.drop(["country", "iso"], axis=1))
-df_index = pd.concat([df_index, df_mean])
-
-# Filter df_index by country
-df_index = df_index[df_index["country"].isin(
-    ["Indonesia", "Japan", "Cambodia", "South Korea", "Laos",
-        "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam", "world average"]
-)].reset_index(drop=True)
-```
-
-```{python}
-# Merge crosswalk to df_issuance
+# Merge crosswalk to df_bonds
 df_bonds = df_bonds.merge(
     crosswalk,
     on="Economy",
     how="left"
 )
 
-# Clean df_issuance, align with df_index
+# Clean df_bonds, align with df_index
 df_bonds = df_bonds.rename(columns={"Date": "Year"})
 df_bonds = df_bonds.apply(lambda x: np.where(x == 0.0, np.nan, x))
 df_bonds = df_bonds.replace("Sep-2024", "2024").infer_objects(copy=False)
@@ -232,6 +250,8 @@ path_base = os.path.join(
 df_base.to_csv(path_base)
 ```
 
+## Plot DFs
+
 ```{python}
 # Set path to save pictures
 path_picture = os.path.join(
@@ -239,26 +259,30 @@ path_picture = os.path.join(
 )
 ```
 
+- Plot EPI
+
 ```{python}
-# Plot EPI over year
-chart_index = alt.Chart(df_index).mark_line().encode(
+# Plot each country's gap from average over year
+chart_index = alt.Chart(df_base).mark_line().encode(
     alt.X("Year:O"),
-    alt.Y("EPI:Q", scale=alt.Scale(zero=False)),
-    alt.Color("country:N", legend=None)
+    alt.Y("EPI gap from average:Q"),
+    alt.Color("Country Name:N", legend=None)
 ).properties(
     width=500,
     height=500
+).transform_filter(
+    "(datum.Year==2016)|(datum.Year==2018)|(datum.Year==2020)|(datum.Year==2022)|(datum.Year==2024)"
 )
 
-chart_index_text = alt.Chart(df_index).transform_filter(
+chart_index_text = alt.Chart(df_base).transform_filter(
     "datum.Year == 2024"
 ).mark_text(
     align="left", baseline="middle", dx=7
 ).encode(
-    text="country:N",
+    text="Country Name:N",
     x="Year:O",
-    y="EPI:Q",
-    color="country:N"
+    y="EPI gap from average:Q",
+    color="Country Name:N"
 )
 
 chart_index = chart_index + chart_index_text
@@ -266,17 +290,16 @@ chart_index = chart_index + chart_index_text
 chart_index.show()
 
 # Save the plot as png
-os.makedirs(path_picture, exist_ok=True)
 path_picture_index = os.path.join(
     path_picture, "chart_index.png"
 )
 chart_index.save(path_picture_index)
 ```
 
-
+- Plot bonds
 ```{python}
 # Plot issuances per year
-chart_bonds = alt.Chart(df_bonds).mark_bar().encode(
+chart_bonds = alt.Chart(df_base).mark_bar().encode(
     alt.X("Year:O"),
     alt.Y("total_green:Q"),
     alt.Color("Economy:N")
@@ -286,4 +309,37 @@ chart_bonds = alt.Chart(df_bonds).mark_bar().encode(
 )
 
 chart_bonds
+
+# Save the plot as png
+path_picture_bonds = os.path.join(
+    path_picture, "chart_bonds.png"
+)
+chart_bonds.save(path_picture_bonds)
+```
+
+
+
+## Subset the bond plot
+
+
+```{python}
+df_bonds_bins = df_bonds.groupby(["Year", "country"]).agg(
+    total_green = ("total_green", "sum")
+).reset_index()
+
+
+
+
+chart_bonds_to2018 = alt.Chart(df_bonds).mark_line().encode(
+    alt.X("Year:O"),
+    alt.Y("total_green:Q"),
+    alt.Color("Economy:N")
+).properties(
+    width=500,
+    height=500
+).transform_filter(
+    "(datum.Year == 2017)|(datum.Year == 2017)"
+)
+
+chart_bonds_to2018
 ```
