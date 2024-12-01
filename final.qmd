@@ -142,8 +142,6 @@ df_index = df_index[df_index["country"] != "world average"]
 
     - Drop observations in 2023 and Sep-2024
 
-    - Replace 0.0 by NA?
-
 ```{python}
 # Load bond issuance datasets
 path_data = os.path.join(
@@ -179,6 +177,17 @@ df_bonds = df_bonds.rename(columns={
     "Corporate LCY(USD millions)_y": "corp_lcy_sustainability",
     "Total(USD millions)_y": "total_sustainability",
 })
+
+# Add columns based on issuer type
+df_bonds["govt_green"] = df_bonds["govt_fcy_green"] + \
+    df_bonds["govt_lcy_green"]
+df_bonds["corp_green"] = df_bonds["corp_fcy_green"] + \
+    df_bonds["corp_lcy_green"]
+df_bonds["govt_sustainability"] = df_bonds["govt_fcy_sustainability"] + \
+    df_bonds["govt_lcy_sustainability"]
+df_bonds["corp_sustainability"] = df_bonds["corp_fcy_sustainability"] + \
+    df_bonds["corp_lcy_sustainability"]
+
 
 # Drop China (outlier) and Hong Kong (not included in original df_index)
 df_bonds = df_bonds[~df_bonds["Economy"].isin(["CN", "HK"])]
@@ -216,7 +225,6 @@ df_bonds = df_bonds.merge(
 
 # Clean df_bonds, align with df_index
 df_bonds = df_bonds.rename(columns={"Date": "Year"})
-df_bonds = df_bonds.apply(lambda x: np.where(x == 0.0, np.nan, x))
 df_bonds = df_bonds.replace("Sep-2024", "2024").infer_objects(copy=False)
 df_bonds["Year"] = df_bonds["Year"].astype(int)
 ```
@@ -293,8 +301,10 @@ chart_index.save(path_picture_index)
 # Plot issuances per year
 chart_bonds = alt.Chart(df_base).mark_bar().encode(
     alt.X("Year:O"),
-    alt.Y("total_green:Q"),
+    alt.Y("total_combined:Q"),
     alt.Color("Country Name:N")
+).transform_calculate(
+    total_combined="datum.total_green + datum.total_sustainability"
 ).properties(
     width=500,
     height=500
@@ -339,4 +349,53 @@ chart_bonds_nonJPSK = alt.Chart(df_base_nonJPSK).mark_bar().encode(
 )
 
 chart_bonds_nonJPSK.show()
+```
+
+```{python}
+# # Plot idea
+# chart_issuer_type_mix_kor = alt.Chart(df_base).transform_filter(
+#     alt.FieldEqualPredicate(field="Country Code", equal="KOR")
+# ).transform_calculate(
+#     govt_green="datum.govt_fcy_green + datum.govt_lcy_green",
+#     corp_green="datum.corp_fcy_green + datum.corp_lcy_green"
+# ).mark_bar().encode(
+#     alt.X("total_green:Q"),
+#     alt.Y("Year:O")
+# ).properties(
+#     width=500,
+#     height=500
+# )
+
+# chart_issuer_type_mix_kor.show()
+```
+
+```{python}
+# Melt df for easier handling
+df_base_long = df_base.melt(
+    id_vars=["Country Name", "Country Code", "Year", "EPI", "EPI average",
+             "EPI gap from average", "total_green", "total_sustainability"],
+    value_vars=["govt_green", "corp_green",
+                "govt_sustainability", "corp_sustainability"],
+    var_name="variable",
+    value_name="amount"
+)
+
+df_base_long[["issuer_type", "bond_label"]
+             ] = df_base_long["variable"].str.split("_", n=1, expand=True)
+
+# Plot idea
+chart_issuer_type_mix_kor = alt.Chart(df_base_long).transform_filter(
+    alt.FieldEqualPredicate(field="Country Code", equal="KOR")
+).transform_filter(
+    alt.FieldEqualPredicate(field="bond_label", equal="green")
+).mark_bar().encode(
+    alt.X("amount:Q", stack="normalize"),
+    alt.Y("Year:O"),
+    alt.Color("issuer_type:N")
+).properties(
+    width=500,
+    height=500
+)
+
+chart_issuer_type_mix_kor
 ```
