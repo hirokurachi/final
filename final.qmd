@@ -320,6 +320,44 @@ chart_bonds.save(path_picture_bonds)
 ```
 
 ```{python}
+# Bin the bonds issuance for each EPI term
+def year_bin(year):
+    if year == 2016:
+        bin = "2016"
+    elif (year == 2017) | (year == 2018):
+        bin = "2017-2018"
+    elif (year == 2019) | (year == 2020):
+        bin = "2019-2020"
+    elif (year == 2021) | (year == 2022):
+        bin = "2021-2022"
+    elif (year == 2023) | (year == 2024):
+        bin = "2023-2024"
+    return bin
+year_bin = [year_bin(y) for y in df_base["Year"]]
+df_base["Year_bin"] = year_bin
+
+# Plot issuances per bins
+chart_bonds_bin = alt.Chart(df_base).mark_bar().encode(
+    alt.X("Year_bin:N"),
+    alt.Y("total_combined:Q"),
+    alt.Color("Country Name:N")
+).transform_calculate(
+    total_combined="datum.total_green + datum.total_sustainability"
+).properties(
+    width=500,
+    height=500
+)
+
+#.transform_filter("datum.Year_bin == '~~~'")
+
+chart_bonds_bin.show()
+
+# Thailand & Malaysia successfully raise EPI, as well as Japan, South Korea, and Singapore. Philippines and Indonesia not.
+# Singapore: the bond issuance amount is consistently not high, but much more highly elastic than Japan and Korea somehow.
+```
+
+
+```{python}
 # Plot idea: gap from 2016 in bond issuance over time
 df_base["total_combined"] = df_base["total_green"] + \
     df_base["total_sustainability"]
