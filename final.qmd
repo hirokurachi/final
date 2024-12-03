@@ -548,6 +548,12 @@ chart_association = alt.layer(
 )
 
 chart_association.show()
+
+# Save the plot as png
+path_association = os.path.join(
+    path_picture, "chart_association.png"
+)
+chart_association.save(path_association)
 ```
 
 ```{python}
