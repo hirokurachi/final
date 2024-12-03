@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import altair as alt
 
-# The contents of the first 'page' is a navset with two 'panels'.
+
 page1 = ui.card(
     ui.card_header("Bonds issuance"),
     output_widget("chart_bonds"),
@@ -12,10 +12,27 @@ page1 = ui.card(
 )
 
 
-page2 = ui.card(
-    ui.card_header("EPI"),
-    output_widget("chart_index"),
-    height=1000
+page2 = ui.page_fluid(
+    ui.input_switch("switch_to_origin",
+                    "Toggle to switch to original values, from the gap from World average", value=False),
+    ui.panel_conditional(
+        "!input.switch_to_origin",
+        ui.input_checkbox_group(
+            id="country",
+            label="Select countries you want to show:",
+            choices={}
+        ),
+        output_widget("chart_index_standardized")
+    ),
+    ui.panel_conditional(
+        "input.switch_to_origin",
+        ui.input_checkbox_group(
+            id="country_and_average",
+            label="Select countries (values) you want to show:",
+            choices={}
+        ),
+        output_widget("chart_index")
+    )
 )
 
 
@@ -39,7 +56,7 @@ app_ui = ui.page_navbar(
 
 
 def server(input, output, session):
-    # Save the working directory adress
+    # Store the working directory adress
     @reactive.calc
     def path_cwd():
         """Define working directory"""
@@ -56,6 +73,11 @@ def server(input, output, session):
         df = pd.read_csv(path_base)
         return df
 
+    @reactive.calc
+    def country_names():
+        return list(df_base()["Country Name"].unique())
+
+    # Prepare for Bond issuance chart
     @render_altair
     def chart_bonds():
         """Plot the bonds issuance plot"""
@@ -71,12 +93,106 @@ def server(input, output, session):
         )
         return chart
 
+    # Prepare for EPI chart
+
+    # Standardized EPI plot: plot gap from World average
+    @reactive.effect
+    def _():
+        """Define multiple choices for countries"""
+        choices_all = {"All ASEAN+3 countries": "All ASEAN+3 countries"}
+        choices_each = {x: x for x in country_names()}
+        choices = choices_all | choices_each
+        ui.update_checkbox_group("country", choices=choices)
+
+    @reactive.calc
+    def df_chosen_without_averages():
+        """Create subset of base df based on input"""
+        if "All ASEAN+3 countries" in input.country():
+            df = df_base()
+        else:
+            df = df_base()[df_base()["Country Name"].isin(input.country())]
+        return df
+
+    @reactive.calc
+    def chart_index_standardized_line():
+        """Create line plot for EPI gap from World average"""
+        chart = alt.Chart(df_chosen_without_averages()).mark_line().encode(
+            alt.X("Year:O"),
+            alt.Y("EPI gap from World average:Q"),
+            alt.Color("Country Name:N", legend=None)
+        ).properties(
+            width=500,
+            height=500
+        ).transform_filter(
+            "(datum.Year==2016)|(datum.Year==2018)|(datum.Year==2020)|(datum.Year==2022)|(datum.Year==2024)"
+        )
+        return chart
+
+    @reactive.calc
+    def chart_index_standardized_text():
+        """Define texts align with line plot for EPI"""
+        chart = alt.Chart(df_chosen_without_averages()).transform_filter(
+            "datum.Year == 2024"
+        ).mark_text(
+            align="left", baseline="middle", dx=7
+        ).encode(
+            text="Country Name:N",
+            x="Year:O",
+            y="EPI gap from World average:Q",
+            color="Country Name:N"
+        )
+        return chart
+
+    @render_altair
+    def chart_index_standardized():
+        """Plot the line plot + text for EPI"""
+        return chart_index_standardized_line() + chart_index_standardized_text()
+
+    # original EPI plot including World/ASEAN+3 average
+    @reactive.calc
+    def df_index():
+        """Load and store dataset including World/ASEAN+3 average"""
+        path_index = os.path.join(
+            path_cwd(), r"data\index.csv"
+        )
+        df = pd.read_csv(path_index)
+        return df
+
+    @reactive.effect
+    def _():
+        """Define multiple choices for countries"""
+        choices_all = {"All ASEAN+3 countries": "All ASEAN+3 countries"}
+        choices_averages = {"Average (World)": "Average (World)",
+                            "Average (ASEAN+3)": "Average (ASEAN+3)"}
+        choices_each = {x: x for x in country_names()}
+
+        choices = choices_all | choices_averages | choices_each
+        ui.update_checkbox_group("country_and_average", choices=choices)
+
+    @reactive.calc
+    def df_chosen_with_averages():
+        """Create subset of base df based on input"""
+        if "All ASEAN+3 countries" in input.country_and_average():
+            # only "All ~" is checked
+            if len(input.country_and_average()) == 1:
+                df = df_index()[~df_index()["Country Name"].isin(
+                    ["Average (World)", "Average (ASEAN+3)"])]
+            else:
+                checked_averages = [
+                    x for x in input.country_and_average() if (x == "Average (World)") | (x == "Average (ASEAN+3)")]
+                checked_all = country_names() + checked_averages
+                df = df_index()[df_index()["Country Name"].isin(checked_all)]
+        else:
+            df = df_index()[df_index()["Country Name"].isin(
+                input.country_and_average())]
+        return df
+
     @reactive.calc
     def chart_index_line():
         """Create line plot for EPI"""
-        chart = alt.Chart(df_base()).mark_line().encode(
+        chart = alt.Chart(df_chosen_with_averages()).mark_line().encode(
             alt.X("Year:O"),
-            alt.Y("EPI gap from average:Q"),
+            alt.Y("EPI:Q"),
             alt.Color("Country Name:N", legend=None)
         ).properties(
             width=500,
@@ -89,14 +205,14 @@ def server(input, output, session):
     @reactive.calc
     def chart_index_text():
         """Define texts align with line plot for EPI"""
-        chart = alt.Chart(df_base()).transform_filter(
+        chart = alt.Chart(df_chosen_with_averages()).transform_filter(
             "datum.Year == 2024"
         ).mark_text(
             align="left", baseline="middle", dx=7
         ).encode(
             text="Country Name:N",
             x="Year:O",
-            y="EPI gap from average:Q",
+            y="EPI:Q",
             color="Country Name:N"
         )
         return chart
