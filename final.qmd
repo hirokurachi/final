@@ -269,9 +269,9 @@ df_bonds_long = df_bonds.melt(
 # Define function to determine issuer type
 def get_issuer_type(value):
     if "govt" in value:
-        return "govt"
+        return "Government"
     elif "corp" in value:
-        return "corp"
+        return "Corporate"
     else:
         return np.nan
 
@@ -287,9 +287,9 @@ def get_currency(value):
 # Define function to determine bond label
 def get_bond_label(value):
     if "green" in value:
-        return "green"
+        return "Green"
     elif "sustainability" in value:
-        return "sustainability"
+        return "Sustainability"
     else:
         return np.nan
 
