@@ -108,34 +108,54 @@ df_index = df_index.melt(
 ```
 
 ```{python}
-# Create world average row
-df_mean = df_index.groupby("Year").agg(
-    EPI = ("EPI", "mean")
-).reset_index()
-df_mean[["country", "iso"]] = "world average"
-df_mean = df_mean[["country", "iso"]].join(df_mean.drop(["country", "iso"], axis=1))
-df_index = pd.concat([df_index, df_mean])
+# Create World/ASEAN+3 average row
+def calc_annual_average(df, outcome):
+    average = df.groupby("Year").agg(
+        EPI=("EPI", "mean")
+    ).reset_index()
+    average[["country", "iso"]] = outcome
+    average = average[["country", "iso"]].join(
+        average.drop(["country", "iso"], axis=1))
+    return average
+
+
+df_world_average = calc_annual_average(df_index, "World average")
+df_index = pd.concat([df_index, df_world_average])
 
 # Filter df_index by country
 df_index = df_index[df_index["country"].isin(
     ["Indonesia", "Japan", "Cambodia", "South Korea", "Laos",
-        "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam", "world average"]
-)].reset_index(drop=True) # Drop China (outlier)
+        "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam", "World average"]
+)].reset_index(drop=True)  # Drop China (outlier)
+
+df_asean3_average = calc_annual_average(
+    df_index[df_index["country"] != "World average"], "ASEAN+3 average")
+df_index = pd.concat([df_index, df_asean3_average])
 ```
 
 ```{python}
-# Create new column of "EPI gap from average"
-def epi_average(year):
+# Create new column of "EPI gap from World average"
+df_average = pd.concat([df_world_average, df_asean3_average])
+
+
+def epi_average(year, pop):
     """Return average EPI for corresponding year"""
-    df_average = df_mean[(df_mean["Year"] == year) & (
-        df_mean["country"] == "world average")]
-    average = df_average.iloc[0]["EPI"]
+    average = df_average[(df_average["Year"] == year) & (
+        df_average["country"] == pop)]
+    average = average.iloc[0]["EPI"]
     return average
 
-df_index["EPI average"] = [epi_average(x) for x in df_index["Year"]]
-df_index["EPI gap from average"] = df_index["EPI"] - \
-    df_index["EPI average"]
-df_index = df_index[df_index["country"] != "world average"]
+
+df_index["EPI World average"] = [epi_average(
+    x, "World average") for x in df_index["Year"]]
+df_index["EPI gap from World average"] = df_index["EPI"] - \
+    df_index["EPI World average"]
+
+# Create new column of "EPI gap from ASEAN+3 average"
+df_index["EPI ASEAN+3 average"] = [epi_average(x, "ASEAN+3 average")
+                                   for x in df_index["Year"]]
+df_index["EPI gap from ASEAN+3 average"] = df_index["EPI"] - \
+    df_index["EPI ASEAN+3 average"]
 ```
 
 ## Clean df_bonds
@@ -227,7 +247,7 @@ df_bonds = df_bonds.loc[df_bonds["Date"] > 2015]
 
 ```{python}
 # Identify corresponding country name and iso in df_index
-countries_index = df_index[["country", "iso"]].value_counts().reset_index(
+countries_index = df_index[~df_index["country"].isin(["World average", "ASEAN+3 average"])][["country", "iso"]].value_counts().reset_index(
 ).sort_values(
     by="iso", 
     ascending=True
@@ -290,11 +310,11 @@ path_picture = os.path.join(
 - Plot EPI
 
 ```{python}
-# Plot each country's gap from average over year
-chart_index = alt.Chart(df_base).mark_line().encode(
+# Plot EPI over year, which includes averages summarized in df_index
+chart_index = alt.Chart(df_index).mark_line().encode(
     alt.X("Year:O"),
-    alt.Y("EPI gap from average:Q"),
-    alt.Color("Country Name:N", legend=None)
+    alt.Y("EPI:Q", scale=alt.Scale(zero=False)),
+    alt.Color("country:N", legend=None)
 ).properties(
     width=500,
     height=500
@@ -302,15 +322,15 @@ chart_index = alt.Chart(df_base).mark_line().encode(
     "(datum.Year==2016)|(datum.Year==2018)|(datum.Year==2020)|(datum.Year==2022)|(datum.Year==2024)"
 )
 
-chart_index_text = alt.Chart(df_base).transform_filter(
+chart_index_text = alt.Chart(df_index).transform_filter(
     "datum.Year == 2024"
 ).mark_text(
     align="left", baseline="middle", dx=7
 ).encode(
-    text="Country Name:N",
+    text="country:N",
     x="Year:O",
-    y="EPI gap from average:Q",
-    color="Country Name:N"
+    y="EPI:Q",
+    color="country:N"
 )
 
 chart_index = chart_index + chart_index_text
@@ -322,6 +342,41 @@ path_picture_index = os.path.join(
     path_picture, "chart_index.png"
 )
 chart_index.save(path_picture_index)
+```
+
+```{python}
+# Plot each country's gap from World average over year
+chart_index_standardized = alt.Chart(df_base).mark_line().encode(
+    alt.X("Year:O"),
+    alt.Y("EPI gap from World average:Q"),
+    alt.Color("Country Name:N", legend=None)
+).properties(
+    width=500,
+    height=500
+).transform_filter(
+    "(datum.Year==2016)|(datum.Year==2018)|(datum.Year==2020)|(datum.Year==2022)|(datum.Year==2024)"
+)
+
+chart_index_standardized_text = alt.Chart(df_base).transform_filter(
+    "datum.Year == 2024"
+).mark_text(
+    align="left", baseline="middle", dx=7
+).encode(
+    text="Country Name:N",
+    x="Year:O",
+    y="EPI gap from World average:Q",
+    color="Country Name:N"
+)
+
+chart_index_standardized = chart_index_standardized + chart_index_standardized_text
+
+chart_index_standardized.show()
+
+# Save the plot as png
+path_picture_index_standardized = os.path.join(
+    path_picture, "chart_index_standardized.png"
+)
+chart_index_standardized.save(path_picture_index_standardized)
 ```
 
 - Plot bonds
@@ -529,6 +584,21 @@ chart_bonds_nonJPSK.show()
 
 # chart_issuer_type_mix_kor.show()
 ```
+
+
+```{python}
+# Melt df for easier handling
+df_base_long = df_base.melt(
+    id_vars=["Country Name", "Country Code", "Year", "EPI", "EPI World average", "EPI ASEAN+3 average",
+             "EPI gap from World average", "EPI gap from ASEAN+3 average", "total_green", "total_sustainability"],
+    value_vars=["govt_green", "corp_green",
+                "govt_sustainability", "corp_sustainability"],
+    var_name="variable",
+    value_name="amount"
+)
+
+df_base_long[["issuer_type", "bond_label"]
+             ] = df_base_long["variable"].str.split("_", n=1, expand=True)
 
 
 ```{python}
