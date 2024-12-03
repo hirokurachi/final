@@ -52,11 +52,11 @@ alt.data_transformers.disable_max_rows()
 # path_cwd = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final")
 path_cwd = (r"C:\Users\LUIS\Documents\GitHub\final")
 
-path_index = os.path.join(
+path_indexes = os.path.join(
     path_cwd, r"data\index"
 )
 path_index_2024 = os.path.join(
-    path_index, "epi2024results.csv"
+    path_indexes, "epi2024results.csv"
 )
 df_index = pd.read_csv(path_index_2024)
 
@@ -66,11 +66,20 @@ df_index = df_index[["iso", "country", "EPI.new"]].rename(
 )
 ```
 
+## Clean dfs
+
+```{python}
+path_data = os.path.join(
+    path_cwd, "data"
+)
+```
+
+- Clean df_index
 ```{python}
 # Add each year's result to the dataset from CSVs
 for year in range(2016, 2024, 2):
     path_index_add = os.path.join(
-        path_index, f"{year}-epi.xlsx"
+        path_indexes, f"{year}-epi.xlsx"
     )
     sheet = {
         2016: 2, 2018: 3, 2020: 4, 2022: 4
@@ -78,16 +87,16 @@ for year in range(2016, 2024, 2):
     df_add = pd.read_excel(path_index_add, sheet_name=sheet[year])
     if year == 2016:
         df_add = df_add.rename(
-            {"Country": "country", "ISO3": "iso", "2016 EPI Score": "EPI.new"}, 
+            {"Country": "country", "ISO3": "iso", "2016 EPI Score": "EPI.new"},
             axis=1
         )
     elif year == 2018:
         df_add = df_add.rename(
-            {"EPI.current": "EPI.new"}, 
+            {"EPI.current": "EPI.new"},
             axis=1
         )
     df_add = df_add[["country", "iso", "EPI.new"]].rename(
-        {"EPI.new": year}, 
+        {"EPI.new": year},
         axis=1
     )
     df_index = df_index.merge(
@@ -104,7 +113,7 @@ df_index = df_index.melt(
     id_vars=["country", "iso"],
     var_name="Year",
     value_name="EPI"
-).sort_values(["iso", "Year"], ascending=True).reset_index(drop=True)
+).sort_values(["iso", "Year"], ascending=True).reset_index(drop=True).rename({"country": "Country Name"}, axis=1)
 ```
 
 ```{python}
@@ -113,23 +122,23 @@ def calc_annual_average(df, outcome):
     average = df.groupby("Year").agg(
         EPI=("EPI", "mean")
     ).reset_index()
-    average[["country", "iso"]] = outcome
-    average = average[["country", "iso"]].join(
-        average.drop(["country", "iso"], axis=1))
+    average[["Country Name", "iso"]] = outcome
+    average = average[["Country Name", "iso"]].join(
+        average.drop(["Country Name", "iso"], axis=1))
     return average
 
 
 df_world_average = calc_annual_average(df_index, "World average")
 df_index = pd.concat([df_index, df_world_average])
 
-# Filter df_index by country
-df_index = df_index[df_index["country"].isin(
+# Filter df_index by Country Name
+df_index = df_index[df_index["Country Name"].isin(
     ["Indonesia", "Japan", "Cambodia", "South Korea", "Laos",
         "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam", "World average"]
 )].reset_index(drop=True)  # Drop China (outlier)
 
 df_asean3_average = calc_annual_average(
-    df_index[df_index["country"] != "World average"], "ASEAN+3 average")
+    df_index[df_index["Country Name"] != "World average"], "ASEAN+3 average")
 df_index = pd.concat([df_index, df_asean3_average])
 ```
 
@@ -141,7 +150,7 @@ df_average = pd.concat([df_world_average, df_asean3_average])
 def epi_average(year, pop):
     """Return average EPI for corresponding year"""
     average = df_average[(df_average["Year"] == year) & (
-        df_average["country"] == pop)]
+        df_average["Country Name"] == pop)]
     average = average.iloc[0]["EPI"]
     return average
 
@@ -156,16 +165,19 @@ df_index["EPI ASEAN+3 average"] = [epi_average(x, "ASEAN+3 average")
                                    for x in df_index["Year"]]
 df_index["EPI gap from ASEAN+3 average"] = df_index["EPI"] - \
     df_index["EPI ASEAN+3 average"]
+
+# Save the dataset as csv file
+path_index = os.path.join(
+    path_data, "index.csv"
+)
+
+df_index.to_csv(path_index)
 ```
 
-## Clean df_bonds
+- Clean df_bonds
 
 ```{python}
 # Load bond issuance datasets
-path_data = os.path.join(
-    path_cwd, "data"
-)
-
 path_green_issuance = os.path.join(
     path_data, "green bonds issuance.csv"
 )
@@ -243,11 +255,11 @@ df_bonds = df_bonds[~df_bonds["Economy"].isin(["CN", "HK", "VN*"])]
 df_bonds = df_bonds.loc[df_bonds["Date"] > 2015]
 ```
 
-## Create crosswalk
+- Create crosswalk
 
 ```{python}
 # Identify corresponding country name and iso in df_index
-countries_index = df_index[~df_index["country"].isin(["World average", "ASEAN+3 average"])][["country", "iso"]].value_counts().reset_index(
+countries_index = df_index[~df_index["Country Name"].isin(["World average", "ASEAN+3 average"])][["Country Name", "iso"]].value_counts().reset_index(
 ).sort_values(
     by="iso", 
     ascending=True
@@ -264,7 +276,7 @@ countries_bonds = df_bonds["Economy"].value_counts().reset_index(
 crosswalk = pd.concat([countries_bonds, countries_index], axis=1)
 ```
 
-## Merge DFs
+- Merge DFs
 ```{python}
 # Merge crosswalk to df_bonds
 df_bonds = df_bonds.merge(
@@ -281,14 +293,14 @@ df_bonds = df_bonds.rename(columns={"Date": "Year"})
 # Merge DFs by Country Code and Date/Year
 df_base = df_bonds.merge(
     df_index,
-    on=["iso", "Year", "country"],
+    on=["iso", "Year", "Country Name"],
     how="left"
 )
 df_base = df_base.drop(["Economy"], axis=1)
 
-df_base = df_base[["country", "iso"]].join(
-    df_base.drop(["country", "iso"], axis=1)
-).rename({"country": "Country Name", "iso": "Country Code"}, axis=1)
+df_base = df_base[["Country Name", "iso"]].join(
+    df_base.drop(["Country Name", "iso"], axis=1)
+).rename({"Country Name": "Country Name", "iso": "Country Code"}, axis=1)
 
 # Save the dataset as csv file
 path_base = os.path.join(
@@ -314,7 +326,7 @@ path_picture = os.path.join(
 chart_index = alt.Chart(df_index).mark_line().encode(
     alt.X("Year:O"),
     alt.Y("EPI:Q", scale=alt.Scale(zero=False)),
-    alt.Color("country:N", legend=None)
+    alt.Color("Country Name:N", legend=None)
 ).properties(
     width=500,
     height=500
@@ -327,10 +339,10 @@ chart_index_text = alt.Chart(df_index).transform_filter(
 ).mark_text(
     align="left", baseline="middle", dx=7
 ).encode(
-    text="country:N",
+    text="Country Name:N",
     x="Year:O",
     y="EPI:Q",
-    color="country:N"
+    color="Country Name:N"
 )
 
 chart_index = chart_index + chart_index_text
