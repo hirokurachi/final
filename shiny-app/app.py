@@ -7,6 +7,26 @@ import altair as alt
 
 page1 = ui.card(
     ui.card_header("Bonds issuance"),
+    ui.page_sidebar(
+        ui.sidebar(
+            ui.input_checkbox_group(
+                id="bond_country",
+                label="Countries:",
+                choices={}
+            ),
+            ui.input_checkbox_group(
+                id="bond_issuer_type",
+                label="Issuer type:",
+                choices=["Government", "Corporate"]
+            ),
+            ui.input_checkbox_group(
+                id="bond_label",
+                label="Bond label:",
+                choices=["Green", "Sustainability"]
+            ),
+            title="Filters"
+        )
+    ),
     output_widget("chart_bonds"),
     height=1000
 )
@@ -60,7 +80,8 @@ def server(input, output, session):
     @reactive.calc
     def path_cwd():
         """Define working directory"""
-        path = r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final"
+        # path = r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final"
+        path = r"C:\Users\LUIS\Documents\GitHub\final"
         return path
 
     # Load and store base data
@@ -78,20 +99,53 @@ def server(input, output, session):
         return list(df_base()["Country Name"].unique())
 
     # Prepare for Bond issuance chart
+    @reactive.effect
+    def _():
+        """Define multiple choices for countries"""
+        choices_all = {"All ASEAN+3 countries": "All ASEAN+3 countries"}
+        choices_each = {x: x for x in country_names()}
+        choices = choices_all | choices_each
+        ui.update_checkbox_group("bond_country", choices=choices)
+
+    @reactive.calc
+    def df_selected():
+        """Create subset of base df based on input"""
+        df = df_base()
+
+        selected_country = input.bond_country()
+        if selected_country:
+            if selected_country == "All ASEAN+3 countries":
+                df = df_base()
+            else:
+                df = df[df["Country Name"].isin(selected_country)]  
+        
+        selected_issuer_type = input.bond_issuer_type()
+        if selected_issuer_type:
+            df = df[df["issuer_type"].isin(selected_issuer_type)]
+
+        selected_bond_label = input.bond_label()
+        if selected_bond_label:
+            df = df[df["bond_label"].isin(selected_bond_label)]
+        
+        return df
+
     @render_altair
     def chart_bonds():
+        filtered_df = df_selected().dropna(subset="bond_label")
+
         """Plot the bonds issuance plot"""
-        chart = alt.Chart(df_base()).mark_bar().encode(
+        chart = alt.Chart(filtered_df).mark_bar().encode(
             alt.X("Year:O"),
-            alt.Y("total_combined:Q"),
+            alt.Y("amount:Q"),
             alt.Color("Country Name:N")
-        ).transform_calculate(
-            total_combined="datum.total_green + datum.total_sustainability"
         ).properties(
             width=500,
             height=500
         )
         return chart
+    
+    # @render_altair
+    # def chart_borrowing_mix():
 
     # Prepare for EPI chart
 

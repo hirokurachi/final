@@ -177,20 +177,6 @@ df_index.to_csv(path_index)
 - Clean df_bonds
 
 ```{python}
-# Load bond issuance datasets
-path_green_issuance = os.path.join(
-    path_data, "green bonds issuance.csv"
-)
-df_green_issuance = pd.read_csv(path_green_issuance, skiprows=10)
-
-path_sustainability_issuance = os.path.join(
-    path_data, "sustainability bonds issuance.csv"
-)
-df_sustainability_issuance = pd.read_csv(
-    path_sustainability_issuance, skiprows=10)
-```
-
-```{python}
 # Load local currency issuance dataset
 path_lcy_issuance = os.path.join(
     path_data, "breakdown of lcy bond market issuance.csv"
@@ -213,6 +199,18 @@ df_lcy_issuance = df_lcy_issuance.rename(columns={
 ```
 
 ```{python}
+# Load bond issuance datasets
+path_green_issuance = os.path.join(
+    path_data, "green bonds issuance.csv"
+)
+df_green_issuance = pd.read_csv(path_green_issuance, skiprows=10)
+
+path_sustainability_issuance = os.path.join(
+    path_data, "sustainability bonds issuance.csv"
+)
+df_sustainability_issuance = pd.read_csv(
+    path_sustainability_issuance, skiprows=10)
+
 # Merge green and sustainability datasets
 df_bonds = df_green_issuance.merge(
     df_sustainability_issuance, on=["Economy", "Date"])
@@ -248,11 +246,60 @@ df_bonds["Date"] = df_bonds["Date"].astype(int)
 # Merge lcy to bonds df
 df_bonds = df_bonds.merge(df_lcy_issuance, on=["Economy", "Date"], how="outer")
 
-# Drop China (outlier), Hong Kong (not included in original df_index), and VN*
+# Drop China (outlier), Hong Kong (not included in original df_index), and VN*(duplicate)
 df_bonds = df_bonds[~df_bonds["Economy"].isin(["CN", "HK", "VN*"])]
 
 # Retain only 2016-2024 data
 df_bonds = df_bonds.loc[df_bonds["Date"] > 2015]
+```
+
+```{python}
+# Melt df for easier handling
+df_bonds_long = df_bonds.melt(
+    id_vars=["Economy", "Date"],
+    value_vars=['govt_fcy_green', 'corp_fcy_green', 'govt_lcy_green',
+                'corp_lcy_green', 'govt_fcy_sustainability',
+                'corp_fcy_sustainability', 'govt_lcy_sustainability',
+                'corp_lcy_sustainability', 'corp_lcy',
+                'govt_lcy'],
+    var_name="variable",
+    value_name="amount"
+)
+
+# Define function to determine issuer type
+def get_issuer_type(value):
+    if "govt" in value:
+        return "Government"
+    elif "corp" in value:
+        return "Corporate"
+    else:
+        return np.nan
+
+# Define function to determine currency
+def get_currency(value):
+    if "lcy" in value:
+        return "lcy"
+    elif "fcy" in value:
+        return "fcy"
+    else:
+        return np.nan
+
+# Define function to determine bond label
+def get_bond_label(value):
+    if "green" in value:
+        return "Green"
+    elif "sustainability" in value:
+        return "Sustainability"
+    else:
+        return np.nan
+
+# Apply functions
+df_bonds_long["issuer_type"] = df_bonds_long["variable"].apply(get_issuer_type)
+df_bonds_long["currency"] = df_bonds_long["variable"].apply(get_currency)
+df_bonds_long["bond_label"] = df_bonds_long["variable"].apply(get_bond_label)
+
+# Rename column
+df_bonds_long = df_bonds_long.rename(columns={"Date": "Year"})
 ```
 
 - Create crosswalk
@@ -266,7 +313,7 @@ countries_index = df_index[~df_index["Country Name"].isin(["Average (World)", "A
 ).drop("count", axis=1).reset_index(drop=True)
 
 # Identify corresponding iso("Economy" column) in df_bonds
-countries_bonds = df_bonds["Economy"].value_counts().reset_index(
+countries_bonds = df_bonds_long["Economy"].value_counts().reset_index(
 ).sort_values(
     by="Economy", 
     ascending=True
@@ -279,19 +326,16 @@ crosswalk = pd.concat([countries_bonds, countries_index], axis=1)
 - Merge DFs
 ```{python}
 # Merge crosswalk to df_bonds
-df_bonds = df_bonds.merge(
+df_bonds_long = df_bonds_long.merge(
     crosswalk,
     on="Economy",
     how="left"
 )
-
-# Clean df_bonds, align with df_index
-df_bonds = df_bonds.rename(columns={"Date": "Year"})
 ```
 
 ```{python}
 # Merge DFs by Country Code and Date/Year
-df_base = df_bonds.merge(
+df_base = df_bonds_long.merge(
     df_index,
     on=["iso", "Year", "Country Name"],
     how="left"
@@ -394,10 +438,13 @@ chart_index_standardized.save(path_picture_index_standardized)
 - Plot bonds
 
 ```{python}
+# Drop bonds with no label
+df_base_filtered = df_base.dropna(subset="bond_label")
+
 # Plot issuances per year
-chart_bonds = alt.Chart(df_base).mark_bar().encode(
+chart_bonds = alt.Chart(df_base_filtered).mark_bar().encode(
     alt.X("Year:O"),
-    alt.Y("total_combined:Q"),
+    alt.Y("amount:Q"),
     alt.Color("Country Name:N")
 ).transform_calculate(
     total_combined="datum.total_green + datum.total_sustainability"
@@ -435,17 +482,21 @@ df_base_long = df_base.melt(
 df_base_long[["issuer_type", "bond_label"]
              ] = df_base_long["variable"].str.split("_", n=1, expand=True)
 
+
+```
+
+```{python}
 # Drop 2024 data
-df_base_long = df_base_long.loc[df_base_long["Year"] != 2024]
+df_base_filtered = df_base.loc[df_base["Year"] != 2024]
 
 # Plot borrowing mix
-chart_issuer_type_mix_kor = alt.Chart(df_base_long).transform_filter(
+chart_issuer_type_mix_kor = alt.Chart(df_base_filtered).transform_filter(
     alt.FieldEqualPredicate(field="Country Code", equal="KOR")
 ).mark_bar().encode(
     alt.X("amount:Q", stack="normalize"),
     alt.Y("Year:O"),
     alt.Color("bond_label:N"),
-    alt.Order("bond_label", sort="ascending")
+    alt.Order("bond_label", sort="descending")
 ).properties(
     width=500,
     height=500
@@ -578,40 +629,6 @@ chart_bonds_nonJPSK = alt.Chart(df_base_nonJPSK).mark_bar().encode(
 
 chart_bonds_nonJPSK.show()
 ```
-
-```{python}
-# # Plot idea
-# chart_issuer_type_mix_kor = alt.Chart(df_base).transform_filter(
-#     alt.FieldEqualPredicate(field="Country Code", equal="KOR")
-# ).transform_calculate(
-#     govt_green="datum.govt_fcy_green + datum.govt_lcy_green",
-#     corp_green="datum.corp_fcy_green + datum.corp_lcy_green"
-# ).mark_bar().encode(
-#     alt.X("total_green:Q"),
-#     alt.Y("Year:O")
-# ).properties(
-#     width=500,
-#     height=500
-# )
-
-# chart_issuer_type_mix_kor.show()
-```
-
-
-```{python}
-# Melt df for easier handling
-df_base_long = df_base.melt(
-    id_vars=["Country Name", "Country Code", "Year", "EPI", "EPI World average", "EPI ASEAN+3 average",
-             "EPI gap from World average", "EPI gap from ASEAN+3 average", "total_green", "total_sustainability"],
-    value_vars=["govt_green", "corp_green",
-                "govt_sustainability", "corp_sustainability"],
-    var_name="variable",
-    value_name="amount"
-)
-
-df_base_long[["issuer_type", "bond_label"]
-             ] = df_base_long["variable"].str.split("_", n=1, expand=True)
-
 
 ```{python}
 # Plot idea
