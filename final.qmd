@@ -49,8 +49,8 @@ alt.data_transformers.disable_max_rows()
         - add the column to the base df, changing the column name
 ```{python}
 # Load 2024 index dataset
-path_cwd = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final")
-# path_cwd = (r"C:\Users\LUIS\Documents\GitHub\final")
+# path_cwd = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final")
+path_cwd = (r"C:\Users\LUIS\Documents\GitHub\final")
 
 path_index = os.path.join(
     path_cwd, r"data\index"
@@ -160,8 +160,6 @@ df_index["EPI gap from ASEAN+3 average"] = df_index["EPI"] - \
 
 ## Clean df_bonds
 
-    - Drop observations in 2023 and Sep-2024
-
 ```{python}
 # Load bond issuance datasets
 path_data = os.path.join(
@@ -181,10 +179,33 @@ df_sustainability_issuance = pd.read_csv(
 ```
 
 ```{python}
-# Merge bond datasets
+# Load local currency issuance dataset
+path_lcy_issuance = os.path.join(
+    path_data, "breakdown of lcy bond market issuance.csv"
+)
+df_lcy_issuance = pd.read_csv(
+    path_lcy_issuance, skiprows=10)
+
+# Drop columns not in USD terms
+df_lcy_issuance = df_lcy_issuance.drop(df_lcy_issuance.columns[2:5], axis=1)
+
+# Convert column values to USD millions
+df_lcy_issuance.iloc[:, 2:5] = df_lcy_issuance.iloc[:, 2:5] * 1000
+
+# Rename columns
+df_lcy_issuance = df_lcy_issuance.rename(columns={
+    "Corporate(USD billions)": "corp_lcy",
+    "Government(USD billions)": "govt_lcy",
+    "Total(USD billions)": "total_lcy",
+})
+```
+
+```{python}
+# Merge green and sustainability datasets
 df_bonds = df_green_issuance.merge(
     df_sustainability_issuance, on=["Economy", "Date"])
 
+# Rename columns
 df_bonds = df_bonds.rename(columns={
     "Government FCY(USD millions)_x": "govt_fcy_green",
     "Corporate FCY(USD millions)_x": "corp_fcy_green",
@@ -198,7 +219,7 @@ df_bonds = df_bonds.rename(columns={
     "Total(USD millions)_y": "total_sustainability",
 })
 
-# Add columns based on issuer type
+# Add columns based on issuer type + bond label
 df_bonds["govt_green"] = df_bonds["govt_fcy_green"] + \
     df_bonds["govt_lcy_green"]
 df_bonds["corp_green"] = df_bonds["corp_fcy_green"] + \
@@ -208,9 +229,18 @@ df_bonds["govt_sustainability"] = df_bonds["govt_fcy_sustainability"] + \
 df_bonds["corp_sustainability"] = df_bonds["corp_fcy_sustainability"] + \
     df_bonds["corp_lcy_sustainability"]
 
+# Handle date column
+df_bonds = df_bonds.replace("Sep-2024", "2024").infer_objects(copy=False)
+df_bonds["Date"] = df_bonds["Date"].astype(int)
 
-# Drop China (outlier) and Hong Kong (not included in original df_index)
-df_bonds = df_bonds[~df_bonds["Economy"].isin(["CN", "HK"])]
+# Merge lcy to bonds df
+df_bonds = df_bonds.merge(df_lcy_issuance, on=["Economy", "Date"], how="outer")
+
+# Drop China (outlier), Hong Kong (not included in original df_index), and VN*
+df_bonds = df_bonds[~df_bonds["Economy"].isin(["CN", "HK", "VN*"])]
+
+# Retain only 2016-2024 data
+df_bonds = df_bonds.loc[df_bonds["Date"] > 2015]
 ```
 
 ## Create crosswalk
@@ -245,8 +275,6 @@ df_bonds = df_bonds.merge(
 
 # Clean df_bonds, align with df_index
 df_bonds = df_bonds.rename(columns={"Date": "Year"})
-df_bonds = df_bonds.replace("Sep-2024", "2024").infer_objects(copy=False)
-df_bonds["Year"] = df_bonds["Year"].astype(int)
 ```
 
 ```{python}
@@ -352,6 +380,7 @@ chart_index_standardized.save(path_picture_index_standardized)
 ```
 
 - Plot bonds
+
 ```{python}
 # Plot issuances per year
 chart_bonds = alt.Chart(df_base).mark_bar().encode(
@@ -372,6 +401,45 @@ path_picture_bonds = os.path.join(
     path_picture, "chart_bonds.png"
 )
 chart_bonds.save(path_picture_bonds)
+```
+
+```{python}
+# Add columns deducting green + sustainability volume from total volume
+df_base["govt_lcy_reduced"] = df_base["govt_lcy"] - \
+    df_base["govt_green"] - df_base["govt_sustainability"]
+df_base["corp_lcy_reduced"] = df_base["corp_lcy"] - \
+    df_base["corp_green"] - df_base["corp_sustainability"]
+
+# Melt df for easier handling
+df_base_long = df_base.melt(
+    id_vars=["Country Name", "Country Code", "Year"],
+    value_vars=["govt_green", "corp_green",
+                "govt_sustainability", "corp_sustainability", "govt_lcy_reduced", "corp_lcy_reduced"],
+    var_name="variable",
+    value_name="amount"
+)
+
+# Split variable column
+df_base_long[["issuer_type", "bond_label"]
+             ] = df_base_long["variable"].str.split("_", n=1, expand=True)
+
+# Drop 2024 data
+df_base_long = df_base_long.loc[df_base_long["Year"] != 2024]
+
+# Plot borrowing mix
+chart_issuer_type_mix_kor = alt.Chart(df_base_long).transform_filter(
+    alt.FieldEqualPredicate(field="Country Code", equal="KOR")
+).mark_bar().encode(
+    alt.X("amount:Q", stack="normalize"),
+    alt.Y("Year:O"),
+    alt.Color("bond_label:N"),
+    alt.Order("bond_label", sort="ascending")
+).properties(
+    width=500,
+    height=500
+)
+
+chart_issuer_type_mix_kor
 ```
 
 ```{python}
@@ -517,6 +585,7 @@ chart_bonds_nonJPSK.show()
 # chart_issuer_type_mix_kor.show()
 ```
 
+
 ```{python}
 # Melt df for easier handling
 df_base_long = df_base.melt(
@@ -531,22 +600,7 @@ df_base_long = df_base.melt(
 df_base_long[["issuer_type", "bond_label"]
              ] = df_base_long["variable"].str.split("_", n=1, expand=True)
 
-# Plot idea
-chart_issuer_type_mix_kor = alt.Chart(df_base_long).transform_filter(
-    alt.FieldEqualPredicate(field="Country Code", equal="KOR")
-).transform_filter(
-    alt.FieldEqualPredicate(field="bond_label", equal="green")
-).mark_bar().encode(
-    alt.X("amount:Q", stack="normalize"),
-    alt.Y("Year:O"),
-    alt.Color("issuer_type:N")
-).properties(
-    width=500,
-    height=500
-)
 
-chart_issuer_type_mix_kor
-```
 ```{python}
 # Plot idea
 df_bond_label = df_base_long.groupby(["Country Name", "Year"]).size().reset_index().drop(0, axis=1)
@@ -579,3 +633,4 @@ chart_bond_label_mix = alt.Chart(df_bond_label).transform_aggregate(
 
 chart_bond_label_mix
 ```
+
