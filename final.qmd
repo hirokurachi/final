@@ -262,10 +262,10 @@ path_picture = os.path.join(
 - Plot EPI
 
 ```{python}
-# Plot each country's gap from average over year
+# Plot EPI over year
 chart_index = alt.Chart(df_base).mark_line().encode(
     alt.X("Year:O"),
-    alt.Y("EPI gap from average:Q"),
+    alt.Y("EPI:Q", scale=alt.Scale(zero=False)),
     alt.Color("Country Name:N", legend=None)
 ).properties(
     width=500,
@@ -281,7 +281,7 @@ chart_index_text = alt.Chart(df_base).transform_filter(
 ).encode(
     text="Country Name:N",
     x="Year:O",
-    y="EPI gap from average:Q",
+    y="EPI:Q",
     color="Country Name:N"
 )
 
@@ -294,6 +294,39 @@ path_picture_index = os.path.join(
     path_picture, "chart_index.png"
 )
 chart_index.save(path_picture_index)
+
+# Plot each country's gap from average over year
+chart_index_standardized = alt.Chart(df_base).mark_line().encode(
+    alt.X("Year:O"),
+    alt.Y("EPI gap from average:Q"),
+    alt.Color("Country Name:N", legend=None)
+).properties(
+    width=500,
+    height=500
+).transform_filter(
+    "(datum.Year==2016)|(datum.Year==2018)|(datum.Year==2020)|(datum.Year==2022)|(datum.Year==2024)"
+)
+
+chart_index_standardized_text = alt.Chart(df_base).transform_filter(
+    "datum.Year == 2024"
+).mark_text(
+    align="left", baseline="middle", dx=7
+).encode(
+    text="Country Name:N",
+    x="Year:O",
+    y="EPI gap from average:Q",
+    color="Country Name:N"
+)
+
+chart_index_standardized = chart_index_standardized + chart_index_standardized_text
+
+chart_index_standardized.show()
+
+# Save the plot as png
+path_picture_index_standardized = os.path.join(
+    path_picture, "chart_index_standardized.png"
+)
+chart_index_standardized.save(path_picture_index_standardized)
 ```
 
 - Plot bonds
