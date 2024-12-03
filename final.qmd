@@ -128,17 +128,17 @@ def calc_annual_average(df, outcome):
     return average
 
 
-df_world_average = calc_annual_average(df_index, "World average")
+df_world_average = calc_annual_average(df_index, "Average (World)")
 df_index = pd.concat([df_index, df_world_average])
 
 # Filter df_index by Country Name
 df_index = df_index[df_index["Country Name"].isin(
     ["Indonesia", "Japan", "Cambodia", "South Korea", "Laos",
-        "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam", "World average"]
+        "Malaysia", "Philippines", "Singapore", "Thailand", "Viet Nam", "Average (World)"]
 )].reset_index(drop=True)  # Drop China (outlier)
 
 df_asean3_average = calc_annual_average(
-    df_index[df_index["Country Name"] != "World average"], "ASEAN+3 average")
+    df_index[df_index["Country Name"] != "Average (World)"], "Average (ASEAN+3)")
 df_index = pd.concat([df_index, df_asean3_average])
 ```
 
@@ -156,12 +156,12 @@ def epi_average(year, pop):
 
 
 df_index["EPI World average"] = [epi_average(
-    x, "World average") for x in df_index["Year"]]
+    x, "Average (World)") for x in df_index["Year"]]
 df_index["EPI gap from World average"] = df_index["EPI"] - \
     df_index["EPI World average"]
 
 # Create new column of "EPI gap from ASEAN+3 average"
-df_index["EPI ASEAN+3 average"] = [epi_average(x, "ASEAN+3 average")
+df_index["EPI ASEAN+3 average"] = [epi_average(x, "Average (ASEAN+3)")
                                    for x in df_index["Year"]]
 df_index["EPI gap from ASEAN+3 average"] = df_index["EPI"] - \
     df_index["EPI ASEAN+3 average"]
@@ -259,7 +259,7 @@ df_bonds = df_bonds.loc[df_bonds["Date"] > 2015]
 
 ```{python}
 # Identify corresponding country name and iso in df_index
-countries_index = df_index[~df_index["Country Name"].isin(["World average", "ASEAN+3 average"])][["Country Name", "iso"]].value_counts().reset_index(
+countries_index = df_index[~df_index["Country Name"].isin(["Average (World)", "Average (ASEAN+3)"])][["Country Name", "iso"]].value_counts().reset_index(
 ).sort_values(
     by="iso", 
     ascending=True
