@@ -534,17 +534,13 @@ df_growth = df_growth.melt(
 )
 
 # Create plot of both growth
-chart_index_growth = alt.Chart(df_growth).mark_line().encode(
+chart_association = alt.Chart(df_growth).mark_line().encode(
     alt.X("Year_bin:O", title="Year"),
     alt.Y("growth_rate:Q", title="Growth rate from 2016 over time"),
     alt.Color("variable:N")
 ).properties(
-    width=500,
-    height=500
-)
-
-chart_association = alt.layer(
-    chart_bonds_growth, chart_index_growth
+    width=600,
+    height=200
 )
 
 chart_association.show()
