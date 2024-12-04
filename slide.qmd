@@ -5,6 +5,8 @@ date: today
 date-format: long
 format: 
     beamer:
+        eval: false
+        echo: true
         aspectratio: 169
         theme: default
         toc: true
@@ -17,17 +19,11 @@ format:
 
 # Introduction 
 
-## Backgrounds
-
-
 ## Research Question
-
-### How do ASEAN countries perform on environmental issues?
-
+- How do ASEAN countries perform on environmental issues?
 - What is the relationship between Green and Sustainability bond issuances and a country's EPI score?
 
 # Datasets
-
 ## Data 1: Bonds issuance
 
 * Bond datasets
@@ -38,28 +34,20 @@ format:
 
 ## Data 2: EPI (Environmental Performance Index) 1/2
 
-### Desireble dataset on outcomes:
+- Desireble dataset on outcomes:
+    - Need to comprehensively cover a wide range of environmental issues, not just a single or limited issues (such as gas emission)
+    - Though our focus is on ASEAN+3, global coverage is desirable to see the performance in the area from world standard objectively
 
-- Need to comprehensively cover a wide range of environmental issues, not just a single or limited issues (such as gas emission)
-
-- Though our focus is on ASEAN+3, global coverage is desirable to see the performance in the area from world standard objectively
-
-### EPI (Environmental Performance Index) 
-
-- Provided by Yale and Columbia Univ.
-
-- "summary of the state of sustainability around the world. Using 58 performance indicators across 11 issue categories, the EPI ranks 180 countries on climate change performance, environmental health, and ecosystem vitality." 
-
-- Nice measurement to catch the broader investments and their influence as a whole!
+- EPI (Environmental Performance Index) 
+    - Provided by Yale and Columbia Univ.
+    - "summary of the state of sustainability around the world. Using 58 performance indicators across 11 issue categories, the EPI ranks 180 countries on climate change performance, environmental health, and ecosystem vitality." 
+    - Nice measurement to catch the broader investments and their influence as a whole!
 
 ![citation and image from https://epi.yale.edu/about-epi](picture/2024_weighting_pie.png){width=500 height=500}
 
 ## Data 2: EPI (Environmental Performance Index) 2/2
 
-### Caveats
-
 - Caveat:
-
     - Calculated each 2 years
         
         - cannot directly match to Bonds data: fit the line
@@ -81,9 +69,13 @@ format:
 ![Consolidated issuance volume, 2016 - 2024YTD](picture/chart_bonds.png){width=200}
 
 In nominal terms, bond issuance volumes have been trending upwards for the past decade.
+
 - Paris commitments
+
 - Energy crisis due to geopolitical conflicts
+
 - Growth of ESG market segment
+
 - More generally, higher deficits due to the pandemic
 
 ## EPI
@@ -92,16 +84,14 @@ In nominal terms, bond issuance volumes have been trending upwards for the past 
 
 There appears to be a regional (and global) drop in EPI scores.
 
-### Standardisation by world average
+- Standardisation by world average
 
 ![Standardized EPI scores](picture/chart_index_standardized.png){width=200}
 
 
-### Observation
+- Observation
 
-## Association between Bonds issuance and EPI
-
-# Conclusion
+- Association between Bonds issuance and EPI
 
 ![Comparison of trend lines - South Korea](picture/chart_combined_with_trend.png){width=200}
 
@@ -112,10 +102,14 @@ For South Korea - we observe a rising trend in Green and Sustainability bond iss
 # Conclusion/Recommendation/Further Research
 
 - Lower scores observed despite higher issuance volumes
+
 - Possible that EPI scores would have decreased even more if not for these investments as they were already downtrending
+
 - Could be a signal of "greenwashing"
 
-For further research:
-- Use of project-level data or more specific categorization of use of proceeds
-- Other potential determinants of EPI scores (e.g. GDP, specific investment into renewable energy, etc.)
-- Other "peer" comparisons aside from region
+- For further research:
+    - Use of project-level data or more specific categorization of use of proceeds
+
+    - Other potential determinants of EPI scores (e.g. GDP, specific investment into renewable energy, etc.)
+    
+    - Other "peer" comparisons aside from region
