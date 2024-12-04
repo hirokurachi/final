@@ -772,5 +772,11 @@ combined_index = chart_index_standardized + index_trend_line
 
 combined = combined_bonds + combined_index
 combined.show()
+
+# Save the plot as png
+path_picture_index = os.path.join(
+    path_picture, "chart_combined_with_trend.png"
+)
+combined.save(path_picture_index)
 ```
 
