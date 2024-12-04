@@ -5,10 +5,14 @@ import pandas as pd
 import altair as alt
 
 
-page1 = ui.card(
-    ui.card_header("Bonds issuance"),
-    ui.page_sidebar(
+page1 = ui.page_fluid(
+    ui.layout_sidebar(
         ui.sidebar(
+            ui.input_checkbox(
+                id="bond_select_all",
+                label="Select all countries",
+                value=True
+            ),
             ui.input_checkbox_group(
                 id="bond_country",
                 label="Countries:",
@@ -17,20 +21,38 @@ page1 = ui.card(
             ui.input_checkbox_group(
                 id="bond_issuer_type",
                 label="Issuer type:",
-                choices=["Government", "Corporate"]
+                choices=["Government", "Corporate"],
+                selected=["Government", "Corporate"]
             ),
             ui.input_checkbox_group(
                 id="bond_label",
                 label="Bond label:",
-                choices=["Green", "Sustainability"]
+                choices=["Green", "Sustainability"],
+                selected=["Green", "Sustainability"]
+            ),
+            ui.input_switch(
+                "show_mix",
+                "Show borrowing mix",
+                value=False
             ),
             title="Filters"
+        ),
+        ui.layout_columns(
+            ui.card(
+                ui.card_header("Bonds issuance"),
+                output_widget("chart_bonds")
+            ),
+            ui.card(
+                ui.card_header("Borrowing mix"),
+                ui.panel_conditional(
+                    "input.show_mix",
+                    output_widget("chart_borrowing_mix"),
+                    height=1000
+                )
+            )
         )
-    ),
-    output_widget("chart_bonds"),
-    height=1000
+    )
 )
-
 
 page2 = ui.page_fluid(
     ui.input_switch("switch_to_origin",
@@ -102,22 +124,22 @@ def server(input, output, session):
     @reactive.effect
     def _():
         """Define multiple choices for countries"""
-        choices_all = {"All ASEAN+3 countries": "All ASEAN+3 countries"}
-        choices_each = {x: x for x in country_names()}
-        choices = choices_all | choices_each
+        choices = {x: x for x in country_names()}
         ui.update_checkbox_group("bond_country", choices=choices)
+
 
     @reactive.calc
     def df_selected():
         """Create subset of base df based on input"""
-        df = df_base()
-
+        
         selected_country = input.bond_country()
         if selected_country:
-            if selected_country == "All ASEAN+3 countries":
-                df = df_base()
-            else:
-                df = df[df["Country Name"].isin(selected_country)]  
+            df = df_base()
+            df = df[df["Country Name"].isin(selected_country)]  
+
+        selected_all = input.bond_select_all()
+        if selected_all:
+            df = df_base()
         
         selected_issuer_type = input.bond_issuer_type()
         if selected_issuer_type:
@@ -144,9 +166,21 @@ def server(input, output, session):
         )
         return chart
     
-    # @render_altair
-    # def chart_borrowing_mix():
+    @render_altair
+    def chart_borrowing_mix():
+        filtered_df = df_selected().dropna(subset="bond_label")
 
+        """Plot the bonds issuance plot"""
+        chart = alt.Chart(filtered_df).mark_bar().encode(
+            alt.X("Year:O"),
+            alt.Y("amount:Q"),
+            alt.Color("Country Name:N")
+        ).properties(
+            width=500,
+            height=500
+        )
+        return chart
+    
     # Prepare for EPI chart
 
     # Standardized EPI plot: plot gap from World average

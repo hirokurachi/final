@@ -446,8 +446,6 @@ chart_bonds = alt.Chart(df_base_filtered).mark_bar().encode(
     alt.X("Year:O"),
     alt.Y("amount:Q"),
     alt.Color("Country Name:N")
-).transform_calculate(
-    total_combined="datum.total_green + datum.total_sustainability"
 ).properties(
     width=500,
     height=500
@@ -460,29 +458,6 @@ path_picture_bonds = os.path.join(
     path_picture, "chart_bonds.png"
 )
 chart_bonds.save(path_picture_bonds)
-```
-
-```{python}
-# Add columns deducting green + sustainability volume from total volume
-df_base["govt_lcy_reduced"] = df_base["govt_lcy"] - \
-    df_base["govt_green"] - df_base["govt_sustainability"]
-df_base["corp_lcy_reduced"] = df_base["corp_lcy"] - \
-    df_base["corp_green"] - df_base["corp_sustainability"]
-
-# Melt df for easier handling
-df_base_long = df_base.melt(
-    id_vars=["Country Name", "Country Code", "Year"],
-    value_vars=["govt_green", "corp_green",
-                "govt_sustainability", "corp_sustainability", "govt_lcy_reduced", "corp_lcy_reduced"],
-    var_name="variable",
-    value_name="amount"
-)
-
-# Split variable column
-df_base_long[["issuer_type", "bond_label"]
-             ] = df_base_long["variable"].str.split("_", n=1, expand=True)
-
-
 ```
 
 ```{python}
@@ -661,5 +636,85 @@ chart_bond_label_mix = alt.Chart(df_bond_label).transform_aggregate(
 )
 
 chart_bond_label_mix
+```
+
+```{python}
+# Plot idea
+# Drop bonds with no label
+df_base_filtered = df_base.dropna(subset="bond_label")
+
+# Normalize amount and EPI gap from world average
+df_base_filtered["amount_norm"] = (df_base_filtered["amount"] - df_base_filtered["amount"].min()) / (df_base_filtered["amount"].max() - df_base_filtered["amount"].min())
+
+df_base_filtered["EPI_gap_norm"] = (df_base_filtered["EPI gap from World average"] - df_base_filtered["EPI gap from World average"].min()) / (df_base_filtered["EPI gap from World average"].max() - df_base_filtered["EPI gap from World average"].min())
+
+# Plot issuances per year
+chart_bonds = alt.Chart(df_base_filtered).mark_point().transform_filter(
+    alt.FieldEqualPredicate(field="Country Code", equal="KOR")
+).encode(
+    alt.X("Year:O"),
+    alt.Y("sum(amount_norm):Q"),
+    alt.Color("Country Name:N")
+).properties(
+    width=500,
+    height=500
+)
+
+bonds_trend_line = alt.Chart(df_base_filtered).mark_line(color="red").transform_filter(
+    alt.FieldEqualPredicate(field="Country Code", equal="KOR")
+).transform_aggregate(
+    sum_amount="sum(amount_norm)",
+    groupby=["Year"]
+).transform_regression(
+    "Year", "sum_amount", method="linear"
+).encode(
+    alt.X("Year:O"),
+    alt.Y("sum_amount:Q")
+)
+
+combined_bonds = chart_bonds + bonds_trend_line
+
+chart_index_standardized = alt.Chart(df_base_filtered).mark_point().transform_filter(
+    alt.FieldEqualPredicate(field="Country Code", equal="KOR")
+).encode(
+    alt.X("Year:O"),
+    alt.Y("EPI_gap_norm:Q"),
+    alt.Color("Country Name:N", legend=None)
+).properties(
+    width=500,
+    height=500
+).transform_filter(
+    "(datum.Year==2016)|(datum.Year==2018)|(datum.Year==2020)|(datum.Year==2022)|(datum.Year==2024)"
+)
+
+index_trend_line = alt.Chart(df_base_filtered).mark_line(color="blue").transform_filter(
+    alt.FieldEqualPredicate(field="Country Code", equal="KOR")
+).transform_regression(
+    "Year", "EPI_gap_norm", method="linear"
+).encode(
+    alt.X("Year:O"),
+    alt.Y("EPI_gap_norm:Q")
+)
+
+combined_index = chart_index_standardized + index_trend_line
+
+combined = combined_bonds + combined_index
+combined.show()
+```
+
+```{python}
+# Plot issuances per year
+chart_bonds = alt.Chart(df_base_filtered).mark_point().transform_filter(
+    alt.FieldEqualPredicate(field="Country Code", equal="KOR")
+).encode(
+    alt.X("Year:O"),
+    alt.Y("sum(amount_norm):Q"),
+    alt.Color("Country Name:N")
+).properties(
+    width=500,
+    height=500
+)
+
+chart_bonds
 ```
 
