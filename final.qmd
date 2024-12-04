@@ -439,7 +439,8 @@ chart_index_standardized.save(path_picture_index_standardized)
 
 ```{python}
 # Drop bonds with no label
-df_base_filtered = df_base.dropna(subset="bond_label")
+df_base_filtered = df_base.copy()
+df_base_filtered = df_base_filtered.dropna(subset="bond_label")
 
 # Plot issuances per year
 chart_bonds = alt.Chart(df_base_filtered).mark_bar().encode(
@@ -460,12 +461,13 @@ path_picture_bonds = os.path.join(
 chart_bonds.save(path_picture_bonds)
 ```
 
+- Plot borrowing mix
 ```{python}
 # Drop 2024 data
-df_base_filtered = df_base.loc[df_base["Year"] != 2024]
+df_base_filtered_total = df_base.loc[df_base["Year"] != 2024]
 
 # Plot borrowing mix
-chart_issuer_type_mix_kor = alt.Chart(df_base_filtered).transform_filter(
+chart_issuer_type_mix_kor = alt.Chart(df_base_filtered_total).transform_filter(
     alt.FieldEqualPredicate(field="Country Code", equal="KOR")
 ).mark_bar().encode(
     alt.X("amount:Q", stack="normalize"),
