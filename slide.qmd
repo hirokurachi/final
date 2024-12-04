@@ -1,5 +1,5 @@
 ---
-title: "Title"
+title: "Green + Sustainable Bonds and Their Outcomes"
 author: "Luis Señires and Hiroaki Kurachi"
 date: today
 date-format: long
@@ -19,15 +19,58 @@ format:
 
 ## Backgrounds
 
+
 ## Research Question
+
+- Are Green + Sustainable Bonds becoming more widespread among ASEAN countries?
+
+- How do ASEAN countries perform on environmental issues?
+
+- Are there any association between the Bonds issuance and the performance?
 
 # Datasets
 
-## Bond issuance
+## Data 1: Bonds issuance
 
-## EPI (Environmental Performance Index) by Yale Univ., etc.
 
-- Calculated each 2 years 
+
+## Data 2: EPI (Environmental Performance Index) 1/2
+
+### Desireble dataset on outcomes:
+
+- Need to comprehensively cover a wide range of environmental issues, not just a single or limited issues (such as gas emission)
+
+- Though our focus is on ASEAN+3, global coverage is desirable to see the performance in the area from world standard objectively
+
+### EPI (Environmental Performance Index) 
+
+- Provided by Yale and Columbia Univ.
+
+- "summary of the state of sustainability around the world. Using 58 performance indicators across 11 issue categories, the EPI ranks 180 countries on climate change performance, environmental health, and ecosystem vitality." 
+
+- Nice measurement to catch the broader investments and their influence as a whole!
+
+![citation and image from https://epi.yale.edu/about-epi](picture\2024_weighting_pie.png){width=500 height=500}
+
+## Data 2: EPI (Environmental Performance Index) 2/2
+
+### Caveats
+
+- Caveat:
+
+    - Calculated each 2 years
+        
+        - cannot directly match to Bonds data: fit the line
+
+    - Downward trends in total score:
+    
+        - mitigate by calculate gap from world average/ normalize, not using raw numbers
+
+::: {layout-ncol=2}
+![](picture\chart_index.png)
+
+![](picture\chart_index_standardized.png)
+:::
 
 # Findings
 
@@ -41,15 +84,15 @@ format:
 
 ### other observations which would be helpful for association analysis afterward (or not)
 
-## EPI traits
+## EPI
 
-### Standardisation by world average
+### Take aways
 
-### Observation
 
-### Should we use transition of ranks, rather than change in score?
+## Association between Bonds issuance and EPI
 
-## Bond <-> EPI associations
+# Conclusion
 
-# Conclusion/Recommendation/Further Research
+### Conclusion
 
+### Further research
