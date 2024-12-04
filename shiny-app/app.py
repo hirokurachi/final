@@ -135,8 +135,8 @@ def server(input, output, session):
     @reactive.calc
     def path_cwd():
         """Define working directory"""
-        # path = r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final"
-        path = r"C:\Users\LUIS\Documents\GitHub\final"
+        path = r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final"
+        # path = r"C:\Users\LUIS\Documents\GitHub\final"
         return path
 
     # Load and store base data
@@ -411,14 +411,16 @@ def server(input, output, session):
             value_name="Bonds / EPI Changes (normalized)"
         ).dropna()
 
-        df_base_filtered_amount = df_base_filtered[df_base_filtered["Country Name"]
-                                                   == input.association_country()]
+        df_base_filtered_amount = df_base_filtered[(df_base_filtered["Country Name"]
+                                                   == input.association_country()) & (df_base_filtered["Variables"] == "amount_norm")]
         df_base_filtered_amount = df_base_filtered_amount.groupby(["Country Name", "Year", "Variables"]).agg(
             result=("Bonds / EPI Changes (normalized)", "sum")
         ).reset_index().rename({"result": "Bonds / EPI Changes (normalized)"}, axis=1)
 
-        df_base_filtered = pd.concat([df_base_filtered[df_base_filtered["Variables"]
-                                                       == "EPI_gap_norm"], df_base_filtered_amount])
+        df_base_filtered_epi = df_base_filtered[(df_base_filtered["Country Name"]
+                                                 == input.association_country()) & (df_base_filtered["Variables"] == "EPI_gap_norm")]
+        df_base_filtered = pd.concat(
+            [df_base_filtered_epi, df_base_filtered_amount])
 
         """Plot the scatter plots for each"""
         chart_variables = alt.Chart(df_base_filtered).mark_point().transform_filter(
