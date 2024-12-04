@@ -1,5 +1,5 @@
 ---
-title: "Green + Sustainable Bonds and Their Outcomes"
+title: "Green + Sustainability Bonds and Environmental Performance"
 author: "Luis Señires and Hiroaki Kurachi"
 date: today
 date-format: long
@@ -17,46 +17,44 @@ format:
 
 # Introduction 
 
-## Backgrounds
+## Background
 
+Green, Social, and Sustainability Bonds
 
-## Research Question
++ Financial securities issued by organizations to raise funding for a portfolio of projects...
++ ...that are expected to generate "green" or "social" (or both!) benefits
++ Borrowers are expected to provide allocation and impact reports
 
-### How do ASEAN countries perform on environmental issues?
+EPI (Environmental Performance Index) 
 
-- What is the relationship between Green and Sustainability bond issuances and a country's EPI score?
++ Provided by Yale and Columbia Univ.
++ "summary of the state of sustainability around the world. Using 58 performance indicators across 11 issue categories, the EPI ranks 180 countries on climate change performance, environmental health, and ecosystem vitality." 
++ Nice measurement to catch the broader investments and their influence as a whole!
 
-# Datasets
-
-## Data 1: Bonds issuance
-
-* Bond datasets
-    + Green and Sustainability bond issuance volumes (USD millions)
-    + Total local currency bond issuance volumes (USD millions)
-    + Broken down per issuer (Government and Corporate) and bond label (Green and Sustainability)
-    + Taken from the Asian Development Bank's AsianBondsOnline portal.
-
-## Data 2: EPI (Environmental Performance Index) 1/2
-
-### Desireble dataset on outcomes:
-
-- Need to comprehensively cover a wide range of environmental issues, not just a single or limited issues (such as gas emission)
-
-- Though our focus is on ASEAN+3, global coverage is desirable to see the performance in the area from world standard objectively
-
-### EPI (Environmental Performance Index) 
-
-- Provided by Yale and Columbia Univ.
-
-- "summary of the state of sustainability around the world. Using 58 performance indicators across 11 issue categories, the EPI ranks 180 countries on climate change performance, environmental health, and ecosystem vitality." 
-
-- Nice measurement to catch the broader investments and their influence as a whole!
+{{< pagebreak >}}
 
 ![citation and image from https://epi.yale.edu/about-epi](picture/2024_weighting_pie.png){width=500 height=500}
 
-## Data 2: EPI (Environmental Performance Index) 2/2
+{{< pagebreak >}}
 
-### Caveats
+## Research Question
+
+- What is the relationship between the amount of funding raised through Green and Sustainability bonds and a country's EPI score?
+
+# Datasets
+
+## Data 1: Bond issuances
++ Green and Sustainability bond issuance volumes (USD millions)
++ Total local currency bond issuance volumes (USD millions)
++ Broken down per issuer (Government and Corporate) and bond label (Green and Sustainability)
++ Limited to ASEAN+3 economies
++ Taken from the Asian Development Bank's AsianBondsOnline portal.
+
+## Data 2: EPI 1/2
++ Need to comprehensively cover a wide range of environmental issues, not just a single or limited issues (such as gas emission)
++ Though our focus is on ASEAN+3, global coverage is desirable to see the performance in the area from world standard objectively
+
+## Data 2: EPI 2/2
 
 - Caveat:
 
@@ -81,10 +79,10 @@ format:
 ![Consolidated issuance volume, 2016 - 2024YTD](picture/chart_bonds.png){width=200}
 
 In nominal terms, bond issuance volumes have been trending upwards for the past decade.
-- Paris commitments
-- Energy crisis due to geopolitical conflicts
-- Growth of ESG market segment
-- More generally, higher deficits due to the pandemic
++ Paris commitments
++ Energy crisis due to geopolitical conflicts
++ Growth of ESG market segment
++ More generally, higher deficits due to the pandemic
 
 ## EPI
 
