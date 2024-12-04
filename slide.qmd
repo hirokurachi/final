@@ -21,7 +21,15 @@ format:
 
 ## Research Question
 
+- What is the relationship between Green and Sustainability bond issuances and a country's EPI score?
+
 # Datasets
+
+* Bond datasets
+    + Green and Sustainability bond issuance volumes (USD millions)
+    + Total local currency bond issuance volumes (USD millions)
+    + Broken down per issuer (Government and Corporate) and bond label (Green and Sustainability)
+    + Taken from the Asian Development Bank's AsianBondsOnline portal.
 
 ## Bond issuance
 
@@ -31,19 +39,26 @@ format:
 
 # Findings
 
-## Bond issuance trends
+## Bond statistics
 
-### Share in Whole bonds
+![Consolidated issuance volume, 2016 - 2024YTD](picture/chart_bonds.png){width=200}
 
-### Green/Sustainability rate
-
-### Growth of issuance
-
-### other observations which would be helpful for association analysis afterward (or not)
+In nominal terms, bond issuance volumes have been trending upwards for the past decade.
+- Paris commitments
+- Energy crisis due to geopolitical conflicts
+- Growth of ESG market segment
+- More generally, higher deficits due to the pandemic
 
 ## EPI traits
 
+![Country EPI scores](picture/chart_index.png){width=200}
+
+There appears to be a regional (and global) drop in EPI scores.
+
 ### Standardisation by world average
+
+![Standardized EPI scores](picture/chart_index_standardized.png){width=200}
+
 
 ### Observation
 
@@ -51,5 +66,19 @@ format:
 
 ## Bond <-> EPI associations
 
+![Comparison of trend lines - South Korea](picture/chart_combined_with_trend.png){width=200}
+
+We ran a linear regression on our time series data to draw trend lines of the two datasets. Since their scales are massively different (bonds are expressed in USD millions while the highest EPI score is 75.7), we normalized our data to make a more meaningful comparison.
+
+For South Korea - we observe a rising trend in Green and Sustainability bond issuance volume while their EPI score remains relatively stagnant.
+
 # Conclusion/Recommendation/Further Research
 
+- Lower scores observed despite higher issuance volumes
+- Possible that EPI scores would have decreased even more if not for these investments as they were already downtrending
+- Could be a signal of "greenwashing"
+
+For further research:
+- Use of project-level data or more specific categorization of use of proceeds
+- Other potential determinants of EPI scores (e.g. GDP, specific investment into renewable energy, etc.)
+- Other "peer" comparisons aside from region
