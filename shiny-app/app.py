@@ -37,18 +37,33 @@ page1 = ui.page_fluid(
             ),
             title="Filters"
         ),
-        ui.layout_columns(
-            ui.card(
-                ui.card_header("Bonds issuance"),
-                output_widget("chart_bonds")
-            ),
-            ui.card(
-                ui.card_header("Borrowing mix"),
-                ui.panel_conditional(
-                    "input.show_mix",
-                    output_widget("chart_borrowing_mix"),
-                    height=1000
+        ui.panel_conditional(
+            "!input.show_mix",
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header("Bonds issuance"),
+                    output_widget("chart_bonds_only"),
+                    height=800
                 )
+            )
+        ),
+        ui.panel_conditional(
+            "input.show_mix",
+            ui.layout_columns(
+                ui.card(
+                    ui.card_header("Bonds issuance"),
+                    output_widget("chart_bonds"),
+                    height=800
+                ),
+                ui.card(
+                    ui.card_header("Borrowing mix"),
+                    ui.panel_conditional(
+                        "input.show_mix",
+                        output_widget("chart_borrowing_mix"),
+                        height=800
+                    )
+                ),
+                col_widths=(6, 6)
             )
         )
     )
@@ -148,7 +163,6 @@ def server(input, output, session):
     @reactive.calc
     def df_bonds_selected():
         """Create subset of base df based on input"""
-
         selected_country = input.bond_country()
         if selected_country:
             df = df_base()
@@ -169,6 +183,21 @@ def server(input, output, session):
         return df
 
     @render_altair
+    def chart_bonds_only():
+        filtered_df = df_bonds_selected().dropna(subset="bond_label")
+
+        """Plot the bonds issuance plot"""
+        chart = alt.Chart(filtered_df).mark_bar().encode(
+            alt.X("Year:O"),
+            alt.Y("amount:Q"),
+            alt.Color("Country Name:N")
+        ).properties(
+            width=600,
+            height=600
+        )
+        return chart
+
+    @render_altair
     def chart_bonds():
         filtered_df = df_bonds_selected().dropna(subset="bond_label")
 
@@ -178,20 +207,43 @@ def server(input, output, session):
             alt.Y("amount:Q"),
             alt.Color("Country Name:N")
         ).properties(
-            width=500,
-            height=500
+            width=400,
+            height=400
         )
         return chart
 
+    # Prepare for borrowing mix plot
+    @reactive.calc
+    def filtered_df():
+        """Create subset of base df based on input"""
+        df_base_filtered = df_base().loc[df_base()["Year"] != 2024]
+        selected_country = input.bond_country()
+        if selected_country:
+            df = df_base_filtered
+            df = df[df["Country Name"].isin(selected_country)]
+
+        selected_all = input.bond_select_all()
+        if selected_all:
+            df = df_base_filtered
+
+        selected_issuer_type = input.bond_issuer_type()
+        if selected_issuer_type:
+            df = df[df["issuer_type"].isin(selected_issuer_type)]
+
+        selected_bond_label = input.bond_label()
+        if selected_bond_label:
+            df = df[df["bond_label"].isin(selected_bond_label)]
+
+        return df
+
     @render_altair
     def chart_borrowing_mix():
-        filtered_df = df_selected().dropna(subset="bond_label")
-
         """Plot the bonds issuance plot"""
-        chart = alt.Chart(filtered_df).mark_bar().encode(
-            alt.X("Year:O"),
-            alt.Y("amount:Q"),
-            alt.Color("Country Name:N")
+        chart = alt.Chart(filtered_df()).mark_bar().encode(
+            alt.X("amount:Q", stack="normalize"),
+            alt.Y("Year:O"),
+            alt.Color("bond_label:N"),
+            alt.Order("bond_label", sort="descending")
         ).properties(
             width=500,
             height=500
@@ -226,8 +278,8 @@ def server(input, output, session):
             alt.Y("EPI gap from World average:Q"),
             alt.Color("Country Name:N", legend=None)
         ).properties(
-            width=500,
-            height=500
+            width=600,
+            height=600
         ).transform_filter(
             "(datum.Year==2016)|(datum.Year==2018)|(datum.Year==2020)|(datum.Year==2022)|(datum.Year==2024)"
         )
@@ -300,8 +352,8 @@ def server(input, output, session):
             alt.Y("EPI:Q"),
             alt.Color("Country Name:N", legend=None)
         ).properties(
-            width=500,
-            height=500
+            width=600,
+            height=600
         ).transform_filter(
             "(datum.Year==2016)|(datum.Year==2018)|(datum.Year==2020)|(datum.Year==2022)|(datum.Year==2024)"
         )
@@ -439,7 +491,7 @@ def server(input, output, session):
             alt.Color("Variable:N", legend=None)
         ).properties(
             width=600,
-            height=200
+            height=300
         )
         return chart
 
