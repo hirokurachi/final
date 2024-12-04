@@ -349,7 +349,8 @@ def server(input, output, session):
         """Create line plot for EPI"""
         chart = alt.Chart(df_epi_selected_with_averages()).mark_line().encode(
             alt.X("Year:O", axis=alt.Axis(labelAngle=45)),
-            alt.Y("EPI:Q"),
+            alt.Y("EPI:Q",
+                  scale=alt.Scale(zero=False)),
             alt.Color("Country Name:N", legend=None)
         ).properties(
             width=550,
