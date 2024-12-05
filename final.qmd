@@ -470,7 +470,13 @@ chart_issuer_type_mix_kor = alt.Chart(df_base_filtered_total).transform_filter(
     height=500
 )
 
-#chart_issuer_type_mix_kor
+chart_issuer_type_mix_kor.show()
+
+# Save the plot as png
+path_picture_mix = os.path.join(
+    path_picture, "chart_mix.png"
+)
+chart_mix.save(path_picture_mix)
 ```
 
 
@@ -484,9 +490,9 @@ chart_issuer_type_mix_kor = alt.Chart(df_base_filtered_total).transform_filter(
 
     - But other countries such as SG, ID, PH, KH generally increases the issuance based on their own size of volume
 
-<!-- Add analysis after we fix the share of G+S bonds among total bonds:
 - But as the parcentage bar chart shows, notably the rate of these G+S bonds are quite small in the total bonds volume.
- -->
+
+![Share of G + S bonds in total bonds, 2016 - 2024](picture/chart_mix.png){width=200}
 
 - Possible reasons:
 

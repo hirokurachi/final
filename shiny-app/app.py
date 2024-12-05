@@ -230,21 +230,25 @@ def server(input, output, session):
 
         selected_bond_label = input.bond_label()
         if selected_bond_label:
-            df = df[df["bond_label"].isin(selected_bond_label)]
+            df = df[(df["bond_label"].isin(selected_bond_label))
+                    | df["bond_label"].isna()]
 
         return df
 
     @render_altair
     def chart_borrowing_mix():
         """Plot the bonds issuance plot"""
+        df_borrowing_mix_selected()["bond_label"] = df_borrowing_mix_selected()[
+            "bond_label"].fillna("unrelated bonds")
         chart = alt.Chart(df_borrowing_mix_selected()).mark_bar().encode(
             alt.X("amount:Q", stack="normalize", axis=alt.Axis(labelAngle=45)),
             alt.Y("Year:O"),
-            alt.Color("bond_label:N"),
+            alt.Color("bond_label:N",
+                      legend=alt.Legend(orient="bottom", titleOrient="left")),
             alt.Order("bond_label", sort="descending")
         ).properties(
-            width=500,
-            height=500
+            width=450,
+            height=450
         )
         return chart
 
