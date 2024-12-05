@@ -163,22 +163,17 @@ def server(input, output, session):
     @reactive.calc
     def df_bonds_selected():
         """Create subset of base df based on input"""
+        selected_all = input.bonds_select_all()
         selected_country = input.bonds_country()
-        if selected_country:
-            df = df_base()
+        selected_issuer_type = input.bonds_issuer_type()
+        selected_bond_label = input.bond_label()
+
+        df = df_base()
+        if not selected_all:
             df = df[df["Country Name"].isin(selected_country)]
 
-        selected_all = input.bonds_select_all()
-        if selected_all:
-            df = df_base()
-
-        selected_issuer_type = input.bonds_issuer_type()
-        if selected_issuer_type:
-            df = df[df["issuer_type"].isin(selected_issuer_type)]
-
-        selected_bond_label = input.bond_label()
-        if selected_bond_label:
-            df = df[df["bond_label"].isin(selected_bond_label)]
+        df = df[(df["issuer_type"].isin(selected_issuer_type))
+                & (df["bond_label"].isin(selected_bond_label))]
 
         return df
 
@@ -214,24 +209,17 @@ def server(input, output, session):
     @reactive.calc
     def df_borrowing_mix_selected():
         """Create subset of base df based on input"""
-        df_base_filtered = df_base().loc[df_base()["Year"] != 2024]
+        selected_all = input.bonds_select_all()
         selected_country = input.bonds_country()
-        if selected_country:
-            df = df_base_filtered
+        selected_issuer_type = input.bonds_issuer_type()
+        selected_bond_label = input.bond_label()
+
+        df = df_base().loc[df_base()["Year"] != 2024]
+        if not selected_all:
             df = df[df["Country Name"].isin(selected_country)]
 
-        selected_all = input.bonds_select_all()
-        if selected_all:
-            df = df_base_filtered
-
-        selected_issuer_type = input.bonds_issuer_type()
-        if selected_issuer_type:
-            df = df[df["issuer_type"].isin(selected_issuer_type)]
-
-        selected_bond_label = input.bond_label()
-        if selected_bond_label:
-            df = df[(df["bond_label"].isin(selected_bond_label))
-                    | df["bond_label"].isna()]
+        df = df[(df["issuer_type"].isin(selected_issuer_type))
+                & (df["bond_label"].isin(selected_bond_label) | df["bond_label"].isna())]
 
         return df
 
