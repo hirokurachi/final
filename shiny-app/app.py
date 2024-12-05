@@ -9,17 +9,17 @@ page1 = ui.page_fluid(
     ui.layout_sidebar(
         ui.sidebar(
             ui.input_checkbox(
-                id="bond_select_all",
+                id="bonds_select_all",
                 label="Select all countries",
                 value=True
             ),
             ui.input_checkbox_group(
-                id="bond_country",
+                id="bonds_country",
                 label="Countries:",
                 choices={}
             ),
             ui.input_checkbox_group(
-                id="bond_issuer_type",
+                id="bonds_issuer_type",
                 label="Issuer type:",
                 choices=["Government", "Corporate"],
                 selected=["Government", "Corporate"]
@@ -42,7 +42,7 @@ page1 = ui.page_fluid(
             ui.layout_columns(
                 ui.card(
                     ui.card_header("Bonds issuance"),
-                    output_widget("chart_bonds_only"),
+                    output_widget("chart_bonds_one_column"),
                     height=800
                 )
             )
@@ -72,10 +72,10 @@ page1 = ui.page_fluid(
 page2 = ui.page_fluid(
     ui.page_sidebar(
         ui.sidebar(
-            ui.input_switch("switch_to_origin",
-                            "Toggle to switch to original values, from the gap from World average", value=False),
+            ui.input_switch("show_nominal",
+                            "Toggle to switch to nominal values, from the gap from World average", value=False),
             ui.panel_conditional(
-                "!input.switch_to_origin",
+                "!input.show_nominal",
                 ui.input_checkbox_group(
                     id="epi_country",
                     label="Select countries you want to show:",
@@ -83,7 +83,7 @@ page2 = ui.page_fluid(
                 )
             ),
             ui.panel_conditional(
-                "input.switch_to_origin",
+                "input.show_nominal",
                 ui.input_checkbox_group(
                     id="epi_country_and_average",
                     label="Select countries (values) you want to show:",
@@ -93,12 +93,12 @@ page2 = ui.page_fluid(
             title="Filters"
         ),
         ui.panel_conditional(
-            "!input.switch_to_origin",
-            output_widget("chart_index_standardized")
+            "!input.show_nominal",
+            output_widget("chart_epi_gap")
         ),
         ui.panel_conditional(
-            "input.switch_to_origin",
-            output_widget("chart_index")
+            "input.show_nominal",
+            output_widget("chart_epi")
         ),
         height=1000,
         title="EPI"
@@ -158,21 +158,21 @@ def server(input, output, session):
     def _():
         """Define multiple choices for countries"""
         choices = {x: x for x in country_names()}
-        ui.update_checkbox_group("bond_country", choices=choices)
+        ui.update_checkbox_group("bonds_country", choices=choices)
 
     @reactive.calc
     def df_bonds_selected():
         """Create subset of base df based on input"""
-        selected_country = input.bond_country()
+        selected_country = input.bonds_country()
         if selected_country:
             df = df_base()
             df = df[df["Country Name"].isin(selected_country)]
 
-        selected_all = input.bond_select_all()
+        selected_all = input.bonds_select_all()
         if selected_all:
             df = df_base()
 
-        selected_issuer_type = input.bond_issuer_type()
+        selected_issuer_type = input.bonds_issuer_type()
         if selected_issuer_type:
             df = df[df["issuer_type"].isin(selected_issuer_type)]
 
@@ -183,11 +183,10 @@ def server(input, output, session):
         return df
 
     @render_altair
-    def chart_bonds_only():
-        filtered_df = df_bonds_selected().dropna(subset="bond_label")
-
+    def chart_bonds_one_column():
         """Plot the bonds issuance plot"""
-        chart = alt.Chart(filtered_df).mark_bar().encode(
+        subset = df_bonds_selected().dropna(subset="bond_label")
+        chart = alt.Chart(subset).mark_bar().encode(
             alt.X("Year:O", axis=alt.Axis(labelAngle=45)),
             alt.Y("amount:Q"),
             alt.Color("Country Name:N")
@@ -199,10 +198,9 @@ def server(input, output, session):
 
     @render_altair
     def chart_bonds():
-        filtered_df = df_bonds_selected().dropna(subset="bond_label")
-
         """Plot the bonds issuance plot"""
-        chart = alt.Chart(filtered_df).mark_bar().encode(
+        subset = df_bonds_selected().dropna(subset="bond_label")
+        chart = alt.Chart(subset).mark_bar().encode(
             alt.X("Year:O", axis=alt.Axis(labelAngle=45)),
             alt.Y("amount:Q"),
             alt.Color("Country Name:N")
@@ -214,19 +212,19 @@ def server(input, output, session):
 
     # Prepare for borrowing mix plot
     @reactive.calc
-    def filtered_df():
+    def df_borrowing_mix_selected():
         """Create subset of base df based on input"""
         df_base_filtered = df_base().loc[df_base()["Year"] != 2024]
-        selected_country = input.bond_country()
+        selected_country = input.bonds_country()
         if selected_country:
             df = df_base_filtered
             df = df[df["Country Name"].isin(selected_country)]
 
-        selected_all = input.bond_select_all()
+        selected_all = input.bonds_select_all()
         if selected_all:
             df = df_base_filtered
 
-        selected_issuer_type = input.bond_issuer_type()
+        selected_issuer_type = input.bonds_issuer_type()
         if selected_issuer_type:
             df = df[df["issuer_type"].isin(selected_issuer_type)]
 
@@ -239,7 +237,7 @@ def server(input, output, session):
     @render_altair
     def chart_borrowing_mix():
         """Plot the bonds issuance plot"""
-        chart = alt.Chart(filtered_df()).mark_bar().encode(
+        chart = alt.Chart(df_borrowing_mix_selected()).mark_bar().encode(
             alt.X("amount:Q", stack="normalize", axis=alt.Axis(labelAngle=45)),
             alt.Y("Year:O"),
             alt.Color("bond_label:N"),
@@ -250,9 +248,8 @@ def server(input, output, session):
         )
         return chart
 
-    # Prepare for EPI chart
+    # Prepare for EPI gap from World average chart
 
-    # Standardized EPI plot: plot gap from World average
     @reactive.effect
     def _():
         """Define multiple choices for countries"""
@@ -270,10 +267,10 @@ def server(input, output, session):
             df = df_base()[df_base()["Country Name"].isin(input.epi_country())]
         return df
 
-    @reactive.calc
-    def chart_index_standardized_line():
+    @render_altair
+    def chart_epi_gap():
         """Create line plot for EPI gap from World average"""
-        chart = alt.Chart(df_epi_selected_without_averages()).mark_line().encode(
+        chart_line = alt.Chart(df_epi_selected_without_averages()).mark_line().encode(
             alt.X("Year:O", axis=alt.Axis(labelAngle=45)),
             alt.Y("EPI gap from World average:Q"),
             alt.Color("Country Name:N", legend=None)
@@ -283,12 +280,8 @@ def server(input, output, session):
         ).transform_filter(
             "(datum.Year==2016)|(datum.Year==2018)|(datum.Year==2020)|(datum.Year==2022)|(datum.Year==2024)"
         )
-        return chart
 
-    @reactive.calc
-    def chart_index_standardized_text():
-        """Define texts align with line plot for EPI"""
-        chart = alt.Chart(df_epi_selected_without_averages()).transform_filter(
+        chart_text = alt.Chart(df_epi_selected_without_averages()).transform_filter(
             "datum.Year == 2024"
         ).mark_text(
             align="left", baseline="middle", dx=7
@@ -298,16 +291,14 @@ def server(input, output, session):
             y="EPI gap from World average:Q",
             color="Country Name:N"
         )
+
+        chart = chart_line + chart_text
+
         return chart
 
-    @render_altair
-    def chart_index_standardized():
-        """Plot the line plot + text for EPI"""
-        return chart_index_standardized_line() + chart_index_standardized_text()
-
-    # original EPI plot including World/ASEAN+3 average
+    # Prepare for nominal EPI chart
     @reactive.calc
-    def df_index():
+    def df_epi():
         """Load and store dataset including World/ASEAN+3 average"""
         path_index = os.path.join(
             path_cwd(), r"data\index.csv"
@@ -332,22 +323,22 @@ def server(input, output, session):
         if "All ASEAN+3 countries" in input.epi_country_and_average():
             # only "All ~" is checked
             if len(input.epi_country_and_average()) == 1:
-                df = df_index()[~df_index()["Country Name"].isin(
+                df = df_epi()[~df_epi()["Country Name"].isin(
                     ["Average (World)", "Average (ASEAN+3)"])]
             else:
                 checked_averages = [
                     x for x in input.epi_country_and_average() if (x == "Average (World)") | (x == "Average (ASEAN+3)")]
                 checked_all = country_names() + checked_averages
-                df = df_index()[df_index()["Country Name"].isin(checked_all)]
+                df = df_epi()[df_epi()["Country Name"].isin(checked_all)]
         else:
-            df = df_index()[df_index()["Country Name"].isin(
+            df = df_epi()[df_epi()["Country Name"].isin(
                 input.epi_country_and_average())]
         return df
 
-    @reactive.calc
-    def chart_index_line():
+    @render_altair
+    def chart_epi():
         """Create line plot for EPI"""
-        chart = alt.Chart(df_epi_selected_with_averages()).mark_line().encode(
+        chart_line = alt.Chart(df_epi_selected_with_averages()).mark_line().encode(
             alt.X("Year:O", axis=alt.Axis(labelAngle=45)),
             alt.Y("EPI:Q",
                   scale=alt.Scale(zero=False)),
@@ -358,12 +349,8 @@ def server(input, output, session):
         ).transform_filter(
             "(datum.Year==2016)|(datum.Year==2018)|(datum.Year==2020)|(datum.Year==2022)|(datum.Year==2024)"
         )
-        return chart
 
-    @reactive.calc
-    def chart_index_text():
-        """Define texts align with line plot for EPI"""
-        chart = alt.Chart(df_epi_selected_with_averages()).transform_filter(
+        chart_text = alt.Chart(df_epi_selected_with_averages()).transform_filter(
             "datum.Year == 2024"
         ).mark_text(
             align="left", baseline="middle", dx=7
@@ -373,12 +360,10 @@ def server(input, output, session):
             y="EPI:Q",
             color="Country Name:N"
         )
-        return chart
 
-    @render_altair
-    def chart_index():
-        """Plot the line plot + text for EPI"""
-        return chart_index_line() + chart_index_text()
+        chart = chart_line + chart_text
+
+        return chart
 
     # Prepare for plot for association btw/n Bonds and EPI
     @reactive.effect
@@ -388,42 +373,41 @@ def server(input, output, session):
         ui.update_select("association_country", choices=choices)
 
     @reactive.calc
-    def normalize_data():
+    def df_base_normalized():
         # Drop bonds with no label
-        df_base_filtered = df_base().dropna(subset="bond_label")
+        df = df_base().dropna(subset="bond_label")
 
         # Normalize amount and EPI gap from world average
-        df_base_filtered["amount_norm"] = (df_base_filtered["amount"] - df_base_filtered["amount"].min()) / (
-            df_base_filtered["amount"].max() - df_base_filtered["amount"].min())
+        df["amount_norm"] = (df["amount"] - df["amount"].min()) / (
+            df["amount"].max() - df["amount"].min())
 
-        df_base_filtered["EPI_gap_norm"] = (df_base_filtered["EPI gap from World average"] - df_base_filtered["EPI gap from World average"].min()) / (
-            df_base_filtered["EPI gap from World average"].max() - df_base_filtered["EPI gap from World average"].min())
+        df["EPI_gap_norm"] = (df["EPI gap from World average"] - df["EPI gap from World average"].min()) / (
+            df["EPI gap from World average"].max() - df["EPI gap from World average"].min())
 
-        return df_base_filtered
+        return df
 
     @render_altair
     def chart_with_trend():
-        df_base_filtered = normalize_data()
-        df_base_filtered = df_base_filtered.melt(
+        """Plot the scatter plots for each variable"""
+        df = df_base_normalized().melt(
             id_vars=["Country Name", "Year"],
             value_vars=["amount_norm", "EPI_gap_norm"],
             var_name="Variables",
             value_name="Bonds / EPI Changes (normalized)"
         ).dropna()
 
-        df_base_filtered_amount = df_base_filtered[(df_base_filtered["Country Name"]
-                                                   == input.association_country()) & (df_base_filtered["Variables"] == "amount_norm")]
-        df_base_filtered_amount = df_base_filtered_amount.groupby(["Country Name", "Year", "Variables"]).agg(
+        df_amount = df[(df["Country Name"]
+                        == input.association_country()) & (df["Variables"] == "amount_norm")]
+        df_amount = df_amount.groupby(["Country Name", "Year", "Variables"]).agg(
             result=("Bonds / EPI Changes (normalized)", "sum")
         ).reset_index().rename({"result": "Bonds / EPI Changes (normalized)"}, axis=1)
 
-        df_base_filtered_epi = df_base_filtered[(df_base_filtered["Country Name"]
-                                                 == input.association_country()) & (df_base_filtered["Variables"] == "EPI_gap_norm")]
-        df_base_filtered = pd.concat(
-            [df_base_filtered_epi, df_base_filtered_amount])
+        df_epi = df[(df["Country Name"]
+                     == input.association_country()) & (df["Variables"] == "EPI_gap_norm")]
+        df = pd.concat(
+            [df_epi, df_amount])
 
-        """Plot the scatter plots for each"""
-        chart_variables = alt.Chart(df_base_filtered).mark_point().transform_filter(
+        chart_variables = alt.Chart(df).mark_point().transform_filter(
             alt.FieldEqualPredicate(
                 field="Country Name", equal=input.association_country())
         ).encode(
@@ -435,7 +419,7 @@ def server(input, output, session):
             height=500
         )
 
-        trend_line = alt.Chart(df_base_filtered).mark_line().transform_filter(
+        trend_line = alt.Chart(df).mark_line().transform_filter(
             alt.FieldEqualPredicate(
                 field="Country Name", equal=input.association_country())
         ).transform_regression(
