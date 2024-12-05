@@ -1,6 +1,6 @@
 ---
 title: "Final Project"
-author: "Luis Señires(username: ldsenires, section: 1), Hiroaki Kurachi(username: hirokurachi, section: 2)"
+author: "Luis Señires, Hiroaki Kurachi"
 date: today
 format: 
   pdf:
@@ -18,39 +18,83 @@ include-before-body:
     }
 ---
 
+# Group member
+
+- Luis Señires(username: ldsenires, section: 1)
+
+- Hiroaki Kurachi(username: hirokurachi, section: 2)
+
+<!-- The primary purpose of this writeup is to inform us of what we are reading before we look at your code. -->
+
+# Back ground
+
+- Green, Social, and Sustainability Bonds
+    - Financial securities issued by organizations to raise funding for a portfolio of projects...
+
+    - ...that are expected to generate “green” or “social” (or both!) benefits
+
+    - Borrowers are expected to provide allocation and impact reports
+
+- Environmental Performance Index (EPI)
+    - Provided by Yale and Columbia
+
+    - Uses 58 performance indicators across 11 issue categories
+
+    - Ranks 180 countries on climate change performance, environmental health, and ecosystem vitality
+
+# Research question
+<!--Describe your research question-->
+
+- What is the relationship between the amount of funding raised through Green and Sustainability bonds and a country’s EPI score?
+
+# Approach
+<!--Then discuss the approach you took and the coding involved, including discussing any weaknesses or difficulties encountered -->
+
+- Dataset 1: Bond issuances
+
+    - Green and Sustainability bond issuance volumes (USD millions)
+
+    - Total local currency bond issuance volumes (USD millions)
+
+    - Broken down per issuer (Government and Corporate) and bond label (Green and Sustainability)
+
+    - Limited to ASEAN+3 economies
+
+        - droped China as outlier
+
+    - Taken from the Asian Development Bank’s AsianBondsOnline portal
+
+- Dataset 2: EPI
+
+    - Aggregated into a score
+
+    - Comprehensively covers a wide range of environmental issues, not just a single or limited issues
+    
+    - Though this analysis is focused on ASEAN+3, dataset contains global information which can be useful especially when comparing against world standards
+
+    - Two-year time horizon which does not directly match Bond data
+
 ```{python} 
+#| include: False 
 # Import required packages.
-import zipfile
 import os
-import pandas as pd
 import altair as alt
 import pandas as pd
-from datetime import date, time
 import numpy as np
-import re
-import requests
-import json
+#import re
 alt.renderers.enable("png")
 alt.data_transformers.disable_max_rows() 
 ```
 
-# Data wrangling
+<!--Data wrangling -->
 
-## Create df_index
+<!--1 Create df_index -->
 
-    - Extract column including Index values from 2024 result CSV, changing the column name (-> base df)
-
-    - Iterate below process for each year's result CSV till 2022
-
-        - Extract column including Index values
-
-        - Sort the rows (countries) aligned with 2024 data
-
-        - add the column to the base df, changing the column name
-```{python}
+```{python} 
+#| include: False
 # Load 2024 index dataset
-# path_cwd = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final")
-path_cwd = (r"C:\Users\LUIS\Documents\GitHub\final")
+path_cwd = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final")
+# path_cwd = (r"C:\Users\LUIS\Documents\GitHub\final")
 
 path_indexes = os.path.join(
     path_cwd, r"data\index"
@@ -66,16 +110,16 @@ df_index = df_index[["iso", "country", "EPI.new"]].rename(
 )
 ```
 
-## Clean dfs
-
-```{python}
+```{python} 
+#| include: False
 path_data = os.path.join(
     path_cwd, "data"
 )
 ```
 
 - Clean df_index
-```{python}
+```{python} 
+#| include: False
 # Add each year's result to the dataset from CSVs
 for year in range(2016, 2024, 2):
     path_index_add = os.path.join(
@@ -116,7 +160,8 @@ df_index = df_index.melt(
 ).sort_values(["iso", "Year"], ascending=True).reset_index(drop=True).rename({"country": "Country Name"}, axis=1)
 ```
 
-```{python}
+```{python} 
+#| include: False
 # Create World/ASEAN+3 average row
 def calc_annual_average(df, outcome):
     average = df.groupby("Year").agg(
@@ -142,7 +187,8 @@ df_asean3_average = calc_annual_average(
 df_index = pd.concat([df_index, df_asean3_average])
 ```
 
-```{python}
+```{python} 
+#| include: False
 # Create new column of "EPI gap from World average"
 df_average = pd.concat([df_world_average, df_asean3_average])
 
@@ -174,9 +220,10 @@ path_index = os.path.join(
 df_index.to_csv(path_index)
 ```
 
-- Clean df_bonds
+<!--2 Create df_bonds_long -->
 
-```{python}
+```{python} 
+#| include: False
 # Load local currency issuance dataset
 path_lcy_issuance = os.path.join(
     path_data, "breakdown of lcy bond market issuance.csv"
@@ -198,7 +245,8 @@ df_lcy_issuance = df_lcy_issuance.rename(columns={
 })
 ```
 
-```{python}
+```{python} 
+#| include: False
 # Load bond issuance datasets
 path_green_issuance = os.path.join(
     path_data, "green bonds issuance.csv"
@@ -253,7 +301,8 @@ df_bonds = df_bonds[~df_bonds["Economy"].isin(["CN", "HK", "VN*"])]
 df_bonds = df_bonds.loc[df_bonds["Date"] > 2015]
 ```
 
-```{python}
+```{python} 
+#| include: False
 # Melt df for easier handling
 df_bonds_long = df_bonds.melt(
     id_vars=["Economy", "Date"],
@@ -302,9 +351,10 @@ df_bonds_long["bond_label"] = df_bonds_long["variable"].apply(get_bond_label)
 df_bonds_long = df_bonds_long.rename(columns={"Date": "Year"})
 ```
 
-- Create crosswalk
+<!--3 Create closswalk -->
 
-```{python}
+```{python} 
+#| include: False
 # Identify corresponding country name and iso in df_index
 countries_index = df_index[~df_index["Country Name"].isin(["Average (World)", "Average (ASEAN+3)"])][["Country Name", "iso"]].value_counts().reset_index(
 ).sort_values(
@@ -323,8 +373,10 @@ countries_bonds = df_bonds_long["Economy"].value_counts().reset_index(
 crosswalk = pd.concat([countries_bonds, countries_index], axis=1)
 ```
 
-- Merge DFs
-```{python}
+<!--3 Merge DFs to make base DF-->
+
+```{python} 
+#| include: False
 # Merge crosswalk to df_bonds
 df_bonds_long = df_bonds_long.merge(
     crosswalk,
@@ -333,7 +385,8 @@ df_bonds_long = df_bonds_long.merge(
 )
 ```
 
-```{python}
+```{python} 
+#| include: False
 # Merge DFs by Country Code and Date/Year
 df_base = df_bonds_long.merge(
     df_index,
@@ -354,18 +407,105 @@ path_base = os.path.join(
 df_base.to_csv(path_base)
 ```
 
-## Plot DFs
 
-```{python}
+# Findings
+<!-- Display static plots, briefly discribe then and our Shiny App -->
+
+## Rising issuance volume
+
+<!--Plots on Bond issuance -->
+
+```{python} 
+#| include: False
 # Set path to save pictures
 path_picture = os.path.join(
     path_cwd, "picture"
 )
 ```
 
-- Plot EPI
+<!--1 Bond issuance over time-->
 
-```{python}
+```{python} 
+#| include: False
+# Drop bonds with no label
+df_base_filtered = df_base.copy()
+df_base_filtered = df_base_filtered.dropna(subset="bond_label")
+
+# Plot issuances per year
+chart_bonds = alt.Chart(df_base_filtered).mark_bar().encode(
+    alt.X("Year:O"),
+    alt.Y("amount:Q"),
+    alt.Color("Country Name:N")
+).properties(
+    width=500,
+    height=500
+)
+
+#chart_bonds.show()
+
+# Save the plot as png
+path_picture_bonds = os.path.join(
+    path_picture, "chart_bonds.png"
+)
+chart_bonds.save(path_picture_bonds)
+```
+
+<!--2 Borrowing mix-->
+
+```{python} 
+#| include: False
+# Drop 2024 data
+df_base_filtered_total = df_base.loc[df_base["Year"] != 2024]
+
+# Plot borrowing mix
+chart_issuer_type_mix_kor = alt.Chart(df_base_filtered_total).transform_filter(
+    alt.FieldEqualPredicate(field="Country Code", equal="KOR")
+).mark_bar().encode(
+    alt.X("amount:Q", stack="normalize"),
+    alt.Y("Year:O"),
+    alt.Color("bond_label:N"),
+    alt.Order("bond_label", sort="descending")
+).properties(
+    width=500,
+    height=500
+)
+
+#chart_issuer_type_mix_kor
+```
+
+
+- Upward trending (in nominal terms)
+
+![Consolidated issuance volume, 2016 - 2024YTD](picture/chart_bonds.png){width=200}
+
+- From Dashboard: By filtering countries on bar chart over time, we can see whethre this trend is common in this area or not.
+
+    - JP, SK contributes to forming the trend with large and increasing volume
+
+    - But other countries such as SG, ID, PH, KH generally increases the issuance based on their own size of volume
+
+<!-- Add analysis after we fix the share of G+S bonds among total bonds:
+- But as the parcentage bar chart shows, notably the rate of these G+S bonds are quite small in the total bonds volume.
+ -->
+
+- Possible reasons:
+
+    - Paris commitments
+
+    - Energy crisis due to geopolitical conflicts
+
+    - Growth of ESG market segment
+
+    - More generally, higher deficits due to the pandemic
+
+## Global downtrend in EPI
+
+<!--Plot EPI-->
+
+<!--1 Nominal EPI-->
+
+```{python} 
+#| include: False
 # Plot EPI over year, which includes averages summarized in df_index
 chart_index = alt.Chart(df_index).mark_line().encode(
     alt.X("Year:O"),
@@ -391,7 +531,7 @@ chart_index_text = alt.Chart(df_index).transform_filter(
 
 chart_index = chart_index + chart_index_text
 
-chart_index.show()
+#chart_index.show()
 
 # Save the plot as png
 path_picture_index = os.path.join(
@@ -400,7 +540,10 @@ path_picture_index = os.path.join(
 chart_index.save(path_picture_index)
 ```
 
-```{python}
+<!--2 Gap from world average-->
+
+```{python} 
+#| include: False
 # Plot each country's gap from World average over year
 chart_index_standardized = alt.Chart(df_base).mark_line().encode(
     alt.X("Year:O"),
@@ -426,7 +569,7 @@ chart_index_standardized_text = alt.Chart(df_base).transform_filter(
 
 chart_index_standardized = chart_index_standardized + chart_index_standardized_text
 
-chart_index_standardized.show()
+#chart_index_standardized.show()
 
 # Save the plot as png
 path_picture_index_standardized = os.path.join(
@@ -435,282 +578,24 @@ path_picture_index_standardized = os.path.join(
 chart_index_standardized.save(path_picture_index_standardized)
 ```
 
-- Plot bonds
+- Regional (and global) drop in EPI scores
 
-```{python}
-# Drop bonds with no label
-df_base_filtered = df_base.copy()
-df_base_filtered = df_base_filtered.dropna(subset="bond_label")
+![EPI scores, 2016 - 2024](picture/chart_index.png){width=200}
 
-# Plot issuances per year
-chart_bonds = alt.Chart(df_base_filtered).mark_bar().encode(
-    alt.X("Year:O"),
-    alt.Y("amount:Q"),
-    alt.Color("Country Name:N")
-).properties(
-    width=500,
-    height=500
-)
+- From Dashboard: We can also convert the nominal values into the gap from world average. As we see the relative performance of each countries, the scores of ASEAN+3 countries other than JP, SK and SG are lower than the average. And the whole ASEAN+3 trend is still on downtrend.
 
-chart_bonds.show()
+- Possible reasons:
 
-# Save the plot as png
-path_picture_bonds = os.path.join(
-    path_picture, "chart_bonds.png"
-)
-chart_bonds.save(path_picture_bonds)
-```
+    - Higher standards for performance
 
-- Plot borrowing mix
-```{python}
-# Drop 2024 data
-df_base_filtered_total = df_base.loc[df_base["Year"] != 2024]
+    - More developments focused on economic growth rather than environmental targets
 
-# Plot borrowing mix
-chart_issuer_type_mix_kor = alt.Chart(df_base_filtered_total).transform_filter(
-    alt.FieldEqualPredicate(field="Country Code", equal="KOR")
-).mark_bar().encode(
-    alt.X("amount:Q", stack="normalize"),
-    alt.Y("Year:O"),
-    alt.Color("bond_label:N"),
-    alt.Order("bond_label", sort="descending")
-).properties(
-    width=500,
-    height=500
-)
+## Weak to negative relation 
 
-chart_issuer_type_mix_kor
-```
+<!-- plot for association btw/n Bonds and EPI -->
 
-- plot for association btw/n Bonds and EPI
-
-```{python}
-# Bin the bonds issuance for each EPI term
-def year_bin(year):
-    if year == 2016:
-        bin = "2016"
-    elif (year == 2017) | (year == 2018):
-        bin = "2018"
-    elif (year == 2019) | (year == 2020):
-        bin = "2020"
-    elif (year == 2021) | (year == 2022):
-        bin = "2022"
-    elif (year == 2023) | (year == 2024):
-        bin = "2024"
-    return bin
-year_bin = [year_bin(y) for y in df_base["Year"]]
-df_base["Year_bin"] = year_bin
-
-# Calculate average growth rate in bonds issuance over time
-bonds_growth = df_base.groupby("Year_bin").agg(
-    average=("amount", "mean")
-).reset_index()
-
-bonds_growth["Bonds issuance"] = bonds_growth["average"] / bonds_growth.iloc[0]["average"]
-
-bonds_growth.drop("average", axis=1)
-
-# Calculate average growth rate in EPI (standardized) over time
-index_growth = df_base.groupby("Year_bin").agg(
-    average=("EPI gap from World average", "mean")
-).reset_index()
-
-index_growth["EPI"] = index_growth["average"] / index_growth.iloc[0]["average"]
-
-index_growth.drop("average", axis=1)
-
-# Merge DFs and melt it
-df_growth = bonds_growth.merge(
-    index_growth,
-    on="Year_bin",
-    how="inner"
-)
-
-df_growth = df_growth.melt(
-    id_vars=["Year_bin"],
-    value_vars=["Bonds issuance", "EPI"],
-    var_name="variable",
-    value_name="growth_rate"
-)
-
-# Create plot of both growth
-chart_association = alt.Chart(df_growth).mark_line().encode(
-    alt.X("Year_bin:O", title="Year"),
-    alt.Y("growth_rate:Q", title="Growth rate from 2016 over time"),
-    alt.Color("variable:N")
-).properties(
-    width=600,
-    height=200
-)
-
-chart_association.show()
-
-# Save the plot as png
-path_association = os.path.join(
-    path_picture, "chart_association.png"
-)
-chart_association.save(path_association)
-```
-
-```{python}
-# # Bin the bonds issuance for each EPI term
-# def year_bin(year):
-#     if year == 2016:
-#         bin = "2016"
-#     elif (year == 2017) | (year == 2018):
-#         bin = "2017-2018"
-#     elif (year == 2019) | (year == 2020):
-#         bin = "2019-2020"
-#     elif (year == 2021) | (year == 2022):
-#         bin = "2021-2022"
-#     elif (year == 2023) | (year == 2024):
-#         bin = "2023-2024"
-#     return bin
-# year_bin = [year_bin(y) for y in df_base["Year"]]
-# df_base["Year_bin"] = year_bin
-
-# # Plot issuances per bins
-# chart_bonds_bin = alt.Chart(df_base).mark_bar().encode(
-#     alt.X("Year_bin:N"),
-#     alt.Y("total_combined:Q"),
-#     alt.Color("Country Name:N")
-# ).transform_calculate(
-#     total_combined="datum.total_green + datum.total_sustainability"
-# ).properties(
-#     width=500,
-#     height=500
-# )
-
-# #.transform_filter("datum.Year_bin == '~~~'")
-
-# chart_bonds_bin.show()
-
-# # Thailand & Malaysia successfully raise EPI, as well as Japan, South Korea, and Singapore. Philippines and Indonesia not.
-# # Singapore: the bond issuance amount is consistently not high, but much more highly elastic than Japan and Korea somehow.
-```
-
-
-```{python}
-# # Plot idea: gap from 2016 in bond issuance over time
-# df_base["total_combined"] = df_base["total_green"] + \
-#     df_base["total_sustainability"]
-
-# gap_combined = df_base.groupby("Country Name")["total_combined"].first().reset_index().rename(columns={"total_combined": "gap_combined"})
-
-# df_base = df_base.merge(
-#     gap_combined,
-#     on = "Country Name",
-#     how = "inner"
-# )
-
-# df_base["gap_combined"] = df_base["total_combined"] - df_base["gap_combined"]
-
-# # Plot gap from 2016 in bond issuance over time
-# chart_bonds_gap = alt.Chart(df_base).mark_line().encode(
-#     alt.X("Year:O"),
-#     alt.Y("gap_combined:Q"),
-#     alt.Color("Country Name:N")
-# ).properties(
-#     width=500,
-#     height=500
-# )
-
-# chart_bonds_gap.show()
-```
-
-```{python}
-# # Plot idea: average growth rate in bond issuance over time
-# df_base["total_combined"] = df_base["total_green"] + \
-#     df_base["total_sustainability"]
-
-# df_base["base_combined"] = df_base.groupby("Country Name")["total_combined"].shift(1).fillna(0)
-
-# df_base["growth_combined"] = df_base["total_combined"] / df_base["base_combined"]
-# df_base = df_base[~df_base["growth_combined"].isna()]
-
-# # Plot average growth rate in bond issuance over time
-# chart_bonds_growth = alt.Chart(df_base).transform_aggregate(
-#     groupby=["Country Name"],
-#     growth_combined_average = "average(growth_combined)"
-# ).mark_bar().encode(
-#     alt.X("Country Name:N", sort="-y"),
-#     alt.Y("growth_combined_average:Q"),
-#     alt.Color("Country Name:N")
-# ).properties(
-#     width=500,
-#     height=500
-# )
-
-# chart_bonds_growth.show()
-
-# ## Except some outliers(Indonesia for extremely high growth; Japan and Korea has moderate growth, but the total amount is quite high), it might explain the tiers in EPI (high, medium, low)
-```
-
-- observations (with plots above and the bonds plot without Japan and Korea (below)):
-
-    - 2022-2024: countries with falling EPI (Cambodia, Philippines and Laos) issue less bonds. But countries with rising EPI (Thailand, Malaysia, Indonesia) also issue less bonds.
-
-    - 2020-2022: countries keeping EPI flat (Cambodia, Laos) still issue less bonds
-
-    - *2018-2020: Thailand experienced an improvement in EPI as well as Japan and South Korea, with significant increase in bonds issuance(2019, 2020)*
-
-    - 2016-2018: Thailand experienced a falling in EPI, which might be associated with decrease in bonds issue in 2017. Singapore and Malaysia increased bonds issuance from scratch, but the EPI decreases sharply.
-
-    - countries constantly issuing bonds seems to keep higher EPI scores (primarily Japan, Singapore and South Korea. Then Thailand and Malaysia). But Indonesia suffers worse EPI despite its constant bonds issuance. Philippins is also same, though its bonds issuance are less constant
-
-
-
-
-```{python}
-# # Plot issuances per year
-# df_base_nonJPSK = df_base[(df_base["Country Name"] != "Japan")&(df_base["Country Name"] != "South Korea")]
-
-# chart_bonds_nonJPSK = alt.Chart(df_base_nonJPSK).mark_bar().encode(
-#     alt.X("Year:O"),
-#     alt.Y("total_green:Q"),
-#     alt.Color("Country Name:N")
-# ).properties(
-#     width=500,
-#     height=500
-# )
-
-# chart_bonds_nonJPSK.show()
-```
-
-```{python}
-# # Plot idea
-# df_bond_label = df_base_long.groupby(["Country Name", "Year"]).size().reset_index().drop(0, axis=1)
-
-# bond_label_rate = []
-# for c, y in zip(df_bond_label["Country Name"], df_bond_label["Year"]):
-#     df_subset = df_base_long[(df_base_long["Country Name"] == c) & (df_base_long["Year"] == y)]
-#     if df_subset["amount"].sum() != 0:
-#         green_amount = df_subset[df_subset["bond_label"] == "green"]["amount"].sum()
-#         total_amount = df_subset["amount"].sum()
-#         rate = green_amount/total_amount
-#     else:
-#         rate = np.nan
-#     bond_label_rate.append(rate)
-
-# df_bond_label["bond_label_rate"] = bond_label_rate
-# df_bond_label
-
-# chart_bond_label_mix = alt.Chart(df_bond_label).transform_aggregate(
-#     groupby=["Country Name"],
-#     variance="variance(bond_label_rate)"
-# ).mark_bar().encode(
-#     alt.X("Country Name:N"),
-#     alt.Y("variance:Q"),
-#     alt.Color("Country Name:N")
-# ).properties(
-#     width=500,
-#     height=500
-# )
-
-# chart_bond_label_mix
-```
-
-```{python}
+```{python} 
+#| include: False
 # Plot idea
 # Drop bonds with no label
 df_base_filtered = df_base.dropna(subset="bond_label")
@@ -779,4 +664,252 @@ path_picture_index = os.path.join(
 )
 combined.save(path_picture_index)
 ```
+
+- Plot example: South Korea
+
+![Linear Regression on time series data (Consolidated issuance volume, EPI score, 2016 - 2024](picture/chart_combined_with_trend.png){width=200}
+
+- From Dashboard: we can see other countries' result
+
+- Linear regression on time series data to draw trend lines
+
+- Normalized data for more meaningful comparison
+
+    - Bonds are expressed in USD millions
+
+    - EPI scores are 0 to 100
+
+# Summary and areas for further research
+<!-- Finish with a discussion of directions for future work -->
+
+- Summary
+    - Lower scores observed despite higher issuance volumes
+
+    - Possible that EPI scores would have decreased even more if not for these investments
+
+    - Could be a signal of “greenwashing”
+
+- Areas for further research
+    - Use of project-level data or more specific categorization of use of proceeds
+
+    - Other potential determinants of EPI scores (e.g. GDP, specific investments into renewable energy, etc.)
+
+    - Other peer comparisons aside from region
+
+```{python} 
+#| include: False
+# # Bin the bonds issuance for each EPI term
+# def year_bin(year):
+#     if year == 2016:
+#         bin = "2016"
+#     elif (year == 2017) | (year == 2018):
+#         bin = "2018"
+#     elif (year == 2019) | (year == 2020):
+#         bin = "2020"
+#     elif (year == 2021) | (year == 2022):
+#         bin = "2022"
+#     elif (year == 2023) | (year == 2024):
+#         bin = "2024"
+#     return bin
+# year_bin = [year_bin(y) for y in df_base["Year"]]
+# df_base["Year_bin"] = year_bin
+
+# # Calculate average growth rate in bonds issuance over time
+# bonds_growth = df_base.groupby("Year_bin").agg(
+#     average=("amount", "mean")
+# ).reset_index()
+
+# bonds_growth["Bonds issuance"] = bonds_growth["average"] / bonds_growth.iloc[0]["average"]
+
+# bonds_growth.drop("average", axis=1)
+
+# # Calculate average growth rate in EPI (standardized) over time
+# index_growth = df_base.groupby("Year_bin").agg(
+#     average=("EPI gap from World average", "mean")
+# ).reset_index()
+
+# index_growth["EPI"] = index_growth["average"] / index_growth.iloc[0]["average"]
+
+# index_growth.drop("average", axis=1)
+
+# # Merge DFs and melt it
+# df_growth = bonds_growth.merge(
+#     index_growth,
+#     on="Year_bin",
+#     how="inner"
+# )
+
+# df_growth = df_growth.melt(
+#     id_vars=["Year_bin"],
+#     value_vars=["Bonds issuance", "EPI"],
+#     var_name="variable",
+#     value_name="growth_rate"
+# )
+
+# # Create plot of both growth
+# chart_association = alt.Chart(df_growth).mark_line().encode(
+#     alt.X("Year_bin:O", title="Year"),
+#     alt.Y("growth_rate:Q", title="Growth rate from 2016 over time"),
+#     alt.Color("variable:N")
+# ).properties(
+#     width=600,
+#     height=200
+# )
+
+# chart_association.show()
+
+# # Save the plot as png
+# path_association = os.path.join(
+#     path_picture, "chart_association.png"
+# )
+# chart_association.save(path_association)
+```
+```{python} 
+#| include: False
+# # Bin the bonds issuance for each EPI term
+# def year_bin(year):
+#     if year == 2016:
+#         bin = "2016"
+#     elif (year == 2017) | (year == 2018):
+#         bin = "2017-2018"
+#     elif (year == 2019) | (year == 2020):
+#         bin = "2019-2020"
+#     elif (year == 2021) | (year == 2022):
+#         bin = "2021-2022"
+#     elif (year == 2023) | (year == 2024):
+#         bin = "2023-2024"
+#     return bin
+# year_bin = [year_bin(y) for y in df_base["Year"]]
+# df_base["Year_bin"] = year_bin
+
+# # Plot issuances per bins
+# chart_bonds_bin = alt.Chart(df_base).mark_bar().encode(
+#     alt.X("Year_bin:N"),
+#     alt.Y("total_combined:Q"),
+#     alt.Color("Country Name:N")
+# ).transform_calculate(
+#     total_combined="datum.total_green + datum.total_sustainability"
+# ).properties(
+#     width=500,
+#     height=500
+# )
+
+# #.transform_filter("datum.Year_bin == '~~~'")
+
+# chart_bonds_bin.show()
+
+# # Thailand & Malaysia successfully raise EPI, as well as Japan, South Korea, and Singapore. Philippines and Indonesia not.
+# # Singapore: the bond issuance amount is consistently not high, but much more highly elastic than Japan and Korea somehow.
+```
+
+
+```{python} 
+#| include: False
+# # Plot idea: gap from 2016 in bond issuance over time
+# df_base["total_combined"] = df_base["total_green"] + \
+#     df_base["total_sustainability"]
+
+# gap_combined = df_base.groupby("Country Name")["total_combined"].first().reset_index().rename(columns={"total_combined": "gap_combined"})
+
+# df_base = df_base.merge(
+#     gap_combined,
+#     on = "Country Name",
+#     how = "inner"
+# )
+
+# df_base["gap_combined"] = df_base["total_combined"] - df_base["gap_combined"]
+
+# # Plot gap from 2016 in bond issuance over time
+# chart_bonds_gap = alt.Chart(df_base).mark_line().encode(
+#     alt.X("Year:O"),
+#     alt.Y("gap_combined:Q"),
+#     alt.Color("Country Name:N")
+# ).properties(
+#     width=500,
+#     height=500
+# )
+
+# chart_bonds_gap.show()
+```
+
+```{python} 
+#| include: False
+# # Plot idea: average growth rate in bond issuance over time
+# df_base["total_combined"] = df_base["total_green"] + \
+#     df_base["total_sustainability"]
+
+# df_base["base_combined"] = df_base.groupby("Country Name")["total_combined"].shift(1).fillna(0)
+
+# df_base["growth_combined"] = df_base["total_combined"] / df_base["base_combined"]
+# df_base = df_base[~df_base["growth_combined"].isna()]
+
+# # Plot average growth rate in bond issuance over time
+# chart_bonds_growth = alt.Chart(df_base).transform_aggregate(
+#     groupby=["Country Name"],
+#     growth_combined_average = "average(growth_combined)"
+# ).mark_bar().encode(
+#     alt.X("Country Name:N", sort="-y"),
+#     alt.Y("growth_combined_average:Q"),
+#     alt.Color("Country Name:N")
+# ).properties(
+#     width=500,
+#     height=500
+# )
+
+# chart_bonds_growth.show()
+
+# ## Except some outliers(Indonesia for extremely high growth; Japan and Korea has moderate growth, but the total amount is quite high), it might explain the tiers in EPI (high, medium, low)
+```
+```{python} 
+#| include: False
+# # Plot issuances per year
+# df_base_nonJPSK = df_base[(df_base["Country Name"] != "Japan")&(df_base["Country Name"] != "South Korea")]
+
+# chart_bonds_nonJPSK = alt.Chart(df_base_nonJPSK).mark_bar().encode(
+#     alt.X("Year:O"),
+#     alt.Y("total_green:Q"),
+#     alt.Color("Country Name:N")
+# ).properties(
+#     width=500,
+#     height=500
+# )
+
+# chart_bonds_nonJPSK.show()
+```
+
+```{python} 
+#| include: False
+# # Plot idea
+# df_bond_label = df_base_long.groupby(["Country Name", "Year"]).size().reset_index().drop(0, axis=1)
+
+# bond_label_rate = []
+# for c, y in zip(df_bond_label["Country Name"], df_bond_label["Year"]):
+#     df_subset = df_base_long[(df_base_long["Country Name"] == c) & (df_base_long["Year"] == y)]
+#     if df_subset["amount"].sum() != 0:
+#         green_amount = df_subset[df_subset["bond_label"] == "green"]["amount"].sum()
+#         total_amount = df_subset["amount"].sum()
+#         rate = green_amount/total_amount
+#     else:
+#         rate = np.nan
+#     bond_label_rate.append(rate)
+
+# df_bond_label["bond_label_rate"] = bond_label_rate
+# df_bond_label
+
+# chart_bond_label_mix = alt.Chart(df_bond_label).transform_aggregate(
+#     groupby=["Country Name"],
+#     variance="variance(bond_label_rate)"
+# ).mark_bar().encode(
+#     alt.X("Country Name:N"),
+#     alt.Y("variance:Q"),
+#     alt.Color("Country Name:N")
+# ).properties(
+#     width=500,
+#     height=500
+# )
+
+# chart_bond_label_mix
+```
+
+
 
