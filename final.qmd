@@ -401,7 +401,7 @@ df_base.to_csv(path_base)
 #| include: False
 # Set path to save pictures
 path_picture = os.path.join(
-    path_cwd, "picture"
+    path_cwd, "pictures"
 )
 ```
 
@@ -471,9 +471,9 @@ chart_borrowing_mix_kor.save(path_picture_mix)
 
 ::: {#fig-elephants layout-ncol=2}
 
-![Consolidated issuance volume](picture/chart_bonds.png){width=200}
+![Consolidated issuance volume](pictures/chart_bonds.png){width=200}
 
-![Share of GS bonds in total bonds](picture/chart_mix.png){width=200}
+![Share of GS bonds in total bonds](pictures/chart_mix.png){width=200}
 
 Bonds issuance volume and share, 2016-2024YTD
 :::
@@ -564,7 +564,7 @@ path_picture_epi_gap = os.path.join(
 chart_epi_gap.save(path_picture_epi_gap)
 ```
 
-![EPI scores, 2016-2024](picture/chart_epi.png){width=200}
+![EPI scores, 2016-2024](pictures/chart_epi.png){width=200}
 
 3. In the South Korea example, we can see that EPI scores remain stagnant despite a rise in GS bond issuance volume (we can select each country and make the trend comparison on dashboard). We tried linear regression on time series data to draw trend lines, with normalizing data for more meaningful comparison (Bonds are expressed in USD millions, EPI scores are 0 to 100).
 
@@ -638,7 +638,7 @@ path_picture_trend = os.path.join(
 chart_with_trend.save(path_picture_trend)
 ```
 
-![Linear Regression on time series data - South Korea (Consolidated issuance volume, EPI score, 2016-2024)](picture/chart_with_trend.png){width=200}
+![Linear Regression on time series data - South Korea (Consolidated issuance volume, EPI score, 2016-2024)](pictures/chart_with_trend.png){width=200}
 
 # Summary and areas for further research
 
