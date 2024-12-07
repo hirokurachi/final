@@ -183,7 +183,7 @@ def server(input, output, session):
         subset = df_bonds_selected().dropna(subset="bond_label")
         chart = alt.Chart(subset).mark_bar().encode(
             alt.X("Year:O", axis=alt.Axis(labelAngle=45)),
-            alt.Y("amount:Q"),
+            alt.Y("amount:Q", title="Amount (in USD millions)"),
             alt.Color("Country Name:N")
         )
         return chart
@@ -226,7 +226,7 @@ def server(input, output, session):
     def chart_borrowing_mix():
         """Plot the bonds issuance plot"""
         df_borrowing_mix_selected()["bond_label"] = df_borrowing_mix_selected()[
-            "bond_label"].fillna("unrelated bonds")
+            "bond_label"].fillna("unlabeled bonds")
         chart = alt.Chart(df_borrowing_mix_selected()).mark_bar().encode(
             alt.X("amount:Q", stack="normalize", axis=alt.Axis(labelAngle=45)),
             alt.Y("Year:O"),
