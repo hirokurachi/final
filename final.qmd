@@ -18,41 +18,37 @@ include-before-body:
 
 Luis Señires(username: ldsenires, section1), Hiroaki Kurachi(username: hirokurachi, section2)
 
+
 <!-- The primary purpose of this writeup is to inform us of what we are reading before we look at your code. -->
 
-# Background
+## Background
 
 - Green, Social, and Sustainability Bonds
+
   Financial securities issued by organizations to raise funding for a portfolio of projects that are expected to generate “green” or “social” (or both!) benefits. Borrowers are expected to provide allocation and impact reports
 
 - Environmental Performance Index (EPI)
   Index provided by Yale and Columbia, using 58 performance indicators across 11 issue categories. it ranks 180 countries on climate change performance, environmental health, and ecosystem vitality
 
 # Research question
+
 <!--Describe your research question-->
 
 - What is the relationship between the amount of debt funding raised through Green and Sustainability (GS) bonds and a country’s EPI score?
 
-# Approach
+## Approach
 <!--Then discuss the approach you took and the coding involved, including discussing any weaknesses or difficulties encountered -->
 
-- Dataset 1: GS Bond issuances
 
-    - GS bond issuance volumes + Total local currency bond issuance volumes (USD millions)
+- Dataset 1: GS Bond issuances (taken from ADB AsianBondsOnline portal)
 
-        - We could not find consolidated data for foreign currency bond issuance volumes which would have been important in calculating a more accurate borrowing mix profile
+    - Contains GS bond and total local currency bond issuance volumes (USD millions)
 
-    - Broken down per issuer (Government and Corporate) and bond label (Green and Sustainability)
+    - Limited to ASEAN+3 economies (dropped China as outlier)
 
-    - Limited to ASEAN+3 economies (droped China as outlier)
+- Dataset 2: EPI (taken from Yale EPI website)
 
-    - Taken from the Asian Development Bank’s AsianBondsOnline portal
-
-- Dataset 2: EPI
-
-    - Comprehensively covers a wide range of environmental issues, not just a single or limited issues. Also, though this analysis is focused on ASEAN+3, dataset contains global information which can be useful especially when comparing against world standards
-
-    - Caveat: Two-year time horizon which does not directly match Bond data
+    - Contains aggregated EPI score (two-year time horizon)
 
 ```{python} 
 #| echo: False 
@@ -391,10 +387,10 @@ df_base.to_csv(path_base)
 ```
 
 
-# Findings
+## Findings
 <!-- Display static plots, briefly discribe then and our Shiny App -->
 
-## Rising issuance volume
+1. Nominal borrowing amounts for GS bonds follow an upward trend.
 
 <!--Plots on Bond issuance -->
 
@@ -483,7 +479,7 @@ Bonds issuance volume and share, 2016-2024YTD
 
 - Possible reasons: 1)To fund projects that will help countries meet their nationally determined contributions under the Paris Agreement. 2)To explore alternative indigenous energy sources in response to a looming energy crisis exacerbated by geopolitical conflicts. 3)To take advantage of the growth of capital markets dedicated to Environment, Social, and Governance (ESG). 4)More generally, to meet higher deficit requirements initially caused by the COVID-19 pandemic. 
 
-## Global downtrend in EPI
+2. There is a regional (and global) drop in EPI scores, followed by a slight recovery in 2024.
 
 <!--Plot EPI-->
 
@@ -573,7 +569,7 @@ chart_epi_gap.save(path_picture_epi_gap)
 
 - Possible reasons: 1)Shift in scoring criteria that require higher standards for performance. 2)More developments focused on economic growth rather than environmental targets.
 
-## Weak to negative relation between the two variables
+3. In the South Korea example, we can see that EPI scores remain stagnant despite a rise in GS bond issuance volume.
 
 <!-- plot for association btw/n Bonds and EPI -->
 
@@ -650,6 +646,7 @@ chart_with_trend.save(path_picture_trend)
 In the South Korea example, we can see that EPI scores remain stagnant despite a rise in GS bond issuance volume (we can select each country and make the trend comparison on dashboard). We tried linear regression on time series data to draw trend lines, with normalizing data for more meaningful comparison (Bonds are expressed in USD millions, EPI scores are 0 to 100).
 
 # Summary and areas for further research
+
 <!-- Finish with a discussion of directions for future work -->
 
 - Summary
