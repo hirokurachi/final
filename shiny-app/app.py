@@ -177,33 +177,32 @@ def server(input, output, session):
 
         return df
 
-    @render_altair
-    def chart_bonds_one_column():
-        """Plot the bonds issuance plot"""
+    @reactive.calc
+    def plot_chart_bonds():
+        """Define the bonds issuance plot"""
         subset = df_bonds_selected().dropna(subset="bond_label")
         chart = alt.Chart(subset).mark_bar().encode(
             alt.X("Year:O", axis=alt.Axis(labelAngle=45)),
             alt.Y("amount:Q"),
             alt.Color("Country Name:N")
-        ).properties(
-            width=600,
-            height=600
         )
         return chart
 
     @render_altair
+    def chart_bonds_one_column():
+        """Plot the bonds issuance plot"""
+        return plot_chart_bonds().properties(
+            width=600,
+            height=600
+        )
+
+    @render_altair
     def chart_bonds():
         """Plot the bonds issuance plot"""
-        subset = df_bonds_selected().dropna(subset="bond_label")
-        chart = alt.Chart(subset).mark_bar().encode(
-            alt.X("Year:O", axis=alt.Axis(labelAngle=45)),
-            alt.Y("amount:Q"),
-            alt.Color("Country Name:N")
-        ).properties(
-            width=400,
-            height=400
+        return plot_chart_bonds().properties(
+            width=450,
+            height=450
         )
-        return chart
 
     # Prepare for borrowing mix plot
     @reactive.calc
@@ -292,10 +291,10 @@ def server(input, output, session):
     @reactive.calc
     def df_epi():
         """Load and store dataset including World/ASEAN+3 average"""
-        path_index = os.path.join(
-            path_cwd(), r"data\index.csv"
+        path_epi = os.path.join(
+            path_cwd(), r"data\epi.csv"
         )
-        df = pd.read_csv(path_index)
+        df = pd.read_csv(path_epi)
         return df
 
     @reactive.effect
@@ -425,9 +424,9 @@ def server(input, output, session):
             alt.Color("Variables:N")
         )
 
-        combined_bonds = chart_variables + trend_line
+        chart = chart_variables + trend_line
 
-        return combined_bonds
+        return chart
 
 
 app = App(app_ui, server)
