@@ -1,2 +1,6 @@
-# ignore all files in __pycache__
+# ignore all files in the folder below
 __pycache__/
+
+picture/old
+
+data/old
