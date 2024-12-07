@@ -18,14 +18,13 @@ include-before-body:
       breaklines
     }
 ---
-<div style="text-align: center;">
-<h1 class="fs-1">Final Project</h1>
-<p>Luis Señires(ldsenires, section1), Hiroaki Kurachi(hirokurachi, section2)</p>
-</div>
+
+# Group member
+Luis Señires(ldsenires, section1), Hiroaki Kurachi(hirokurachi, section2)
 
 <!-- The primary purpose of this writeup is to inform us of what we are reading before we look at your code. -->
 
-## Background
+# Background
 
 - Green, Social, and Sustainability Bonds
   Financial securities issued by organizations to raise funding for a portfolio of projects that are expected to generate “green” or “social” (or both!) benefits.
@@ -39,7 +38,7 @@ include-before-body:
 
 - What is the relationship between the amount of debt funding raised through Green and Sustainability (GS) bonds and a country’s EPI score?
 
-## Approach
+# Approach
 <!--Then discuss the approach you took and the coding involved, including discussing any weaknesses or difficulties encountered -->
 
 
@@ -390,7 +389,7 @@ df_base.to_csv(path_base)
 ```
 
 
-## Findings
+# Findings
 <!-- Display static plots, briefly discribe then and our Shiny App -->
 
 1. Nominal borrowing amounts for GS bonds follow an upward trend. Dashboard shows that this trend is common to all countries within the region. While JP, SK contributes to forming the trend with large and increasing volume, other countries such as SG, ID, PH and KH generally increases the issuance based on their own size of volume. But as the borrowing mix shows, notably the rate of these GS bonds are quite small as a percentage of overall borrowing volume.
