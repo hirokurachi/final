@@ -6,6 +6,9 @@ format:
        text: |
          \usepackage{fvextra}
          \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+    geometry:
+      - top=20mm
+      - bottom=15mm
 include-before-body:
   text: |
     \RecustomVerbatimEnvironment{verbatim}{Verbatim}{
@@ -15,20 +18,20 @@ include-before-body:
       breaklines
     }
 ---
-
-Luis Señires(username: ldsenires, section1), Hiroaki Kurachi(username: hirokurachi, section2)
-
+<div style="text-align: center;">
+<h1 class="fs-1">Final Project</h1>
+<p>Luis Señires(ldsenires, section1), Hiroaki Kurachi(hirokurachi, section2)</p>
+</div>
 
 <!-- The primary purpose of this writeup is to inform us of what we are reading before we look at your code. -->
 
 ## Background
 
 - Green, Social, and Sustainability Bonds
-
-  Financial securities issued by organizations to raise funding for a portfolio of projects that are expected to generate “green” or “social” (or both!) benefits. Borrowers are expected to provide allocation and impact reports
+  Financial securities issued by organizations to raise funding for a portfolio of projects that are expected to generate “green” or “social” (or both!) benefits.
 
 - Environmental Performance Index (EPI)
-  Index provided by Yale and Columbia, using 58 performance indicators across 11 issue categories. it ranks 180 countries on climate change performance, environmental health, and ecosystem vitality
+  Index provided by Yale and Columbia, ranking 180 countries on climate change performance, environmental health, and ecosystem vitality
 
 # Research question
 
@@ -390,7 +393,8 @@ df_base.to_csv(path_base)
 ## Findings
 <!-- Display static plots, briefly discribe then and our Shiny App -->
 
-1. Nominal borrowing amounts for GS bonds follow an upward trend.
+1. Nominal borrowing amounts for GS bonds follow an upward trend. Dashboard shows that this trend is common to all countries within the region. While JP, SK contributes to forming the trend with large and increasing volume, other countries such as SG, ID, PH and KH generally increases the issuance based on their own size of volume. But as the borrowing mix shows, notably the rate of these GS bonds are quite small as a percentage of overall borrowing volume.
+    - Possible reasons: 1)To fund projects that will help countries meet their nationally determined contributions under the Paris Agreement. 2)To explore alternative indigenous energy sources in response to a looming energy crisis exacerbated by geopolitical conflicts. 3)To take advantage of the growth of capital markets dedicated to Environment, Social, and Governance (ESG). 4)More generally, to meet higher deficit requirements initially caused by the COVID-19 pandemic. 
 
 <!--Plots on Bond issuance -->
 
@@ -475,11 +479,9 @@ chart_borrowing_mix_kor.save(path_picture_mix)
 Bonds issuance volume and share, 2016-2024YTD
 :::
 
-- Nominal borrowing amounts for GS bonds follow an upward trend. Dashboard shows that this trend is common to all countries within the region. While JP, SK contributes to forming the trend with large and increasing volume, other countries such as SG, ID, PH and KH generally increases the issuance based on their own size of volume. But as the borrowing mix shows, notably the rate of these GS bonds are quite small as a percentage of overall borrowing volume.
+2. There is a regional (and global) drop in EPI scores, followed by a slight recovery in 2024. Even in the relative performance of each countries to a global benchmark using EPI gap from world average (dashboard), the scores of ASEAN+3 countries other than JP, SK and SG are lower than the average, and the whole ASEAN+3 trend is still on downtrend.
+    - Possible reasons: 1)Shift in scoring criteria that require higher standards for performance. 2)More developments focused on economic growth rather than environmental targets.
 
-- Possible reasons: 1)To fund projects that will help countries meet their nationally determined contributions under the Paris Agreement. 2)To explore alternative indigenous energy sources in response to a looming energy crisis exacerbated by geopolitical conflicts. 3)To take advantage of the growth of capital markets dedicated to Environment, Social, and Governance (ESG). 4)More generally, to meet higher deficit requirements initially caused by the COVID-19 pandemic. 
-
-2. There is a regional (and global) drop in EPI scores, followed by a slight recovery in 2024.
 
 <!--Plot EPI-->
 
@@ -565,11 +567,7 @@ chart_epi_gap.save(path_picture_epi_gap)
 
 ![EPI scores, 2016-2024](picture/chart_epi.png){width=200}
 
-- There is a regional (and global) drop in EPI scores, followed by a slight recovery in 2024. Even in the relative performance of each countries to a global benchmark using EPI gap from world average (dashboard), the scores of ASEAN+3 countries other than JP, SK and SG are lower than the average, and the whole ASEAN+3 trend is still on downtrend.
-
-- Possible reasons: 1)Shift in scoring criteria that require higher standards for performance. 2)More developments focused on economic growth rather than environmental targets.
-
-3. In the South Korea example, we can see that EPI scores remain stagnant despite a rise in GS bond issuance volume.
+3. In the South Korea example, we can see that EPI scores remain stagnant despite a rise in GS bond issuance volume (we can select each country and make the trend comparison on dashboard). We tried linear regression on time series data to draw trend lines, with normalizing data for more meaningful comparison (Bonds are expressed in USD millions, EPI scores are 0 to 100).
 
 <!-- plot for association btw/n Bonds and EPI -->
 
@@ -643,15 +641,11 @@ chart_with_trend.save(path_picture_trend)
 
 ![Linear Regression on time series data - South Korea (Consolidated issuance volume, EPI score, 2016-2024)](picture/chart_with_trend.png){width=200}
 
-In the South Korea example, we can see that EPI scores remain stagnant despite a rise in GS bond issuance volume (we can select each country and make the trend comparison on dashboard). We tried linear regression on time series data to draw trend lines, with normalizing data for more meaningful comparison (Bonds are expressed in USD millions, EPI scores are 0 to 100).
-
 # Summary and areas for further research
 
 <!-- Finish with a discussion of directions for future work -->
 
-- Summary
-  Lower scores are observed despite higher GS issuance volumes.It is possible that EPI scores would have decreased even more if not for these investments. This could be a signal of “greenwashing" which refers to bond issuers using the GS label to oversell their environmental commitments to raise funding.
+- Summary: Lower scores are observed despite higher GS issuance volumes.It is possible that EPI scores would have decreased even more if not for these investments. This could be a signal of “greenwashing" which refers to bond issuers using the GS label to oversell their environmental commitments to raise funding.
 
-- Areas for further research
-  1)Use of project-level data or more specific categorization of use of proceeds to derive a more accurate relationship between funds raised and specific projects funded. 2)Explore other potential determinants of EPI scores (e.g. GDP, specific investments into renewable energy, etc.) to help explain observed EPI trends. 3)Make relevant peer comparisons between economies based on other factors aside from region (e.g. emerging economies).
+- Areas for further research: 1)Use of project-level data or more specific categorization of use of proceeds to derive a more accurate relationship between funds raised and specific projects funded. 2)Explore other potential determinants of EPI scores (e.g. GDP, specific investments into renewable energy, etc.) to help explain observed EPI trends. 3)Make relevant peer comparisons between economies based on other factors aside from region (e.g. emerging economies).
 
