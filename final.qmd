@@ -492,9 +492,16 @@ path_picture_mix = os.path.join(
 chart_borrowing_mix_kor.save(path_picture_mix)
 ```
 
-- Nominal borrowing amounts for GS bonds follow an upward trend.
+::: {#fig-elephants layout-ncol=2}
 
-![Consolidated issuance volume, 2016-2024YTD](picture/chart_bonds.png){width=250}
+![Consolidated issuance volume](picture/chart_bonds.png){width=250}
+
+![Share of GS bonds in total bonds](picture/chart_mix.png){width=250}
+
+Bonds issuance volume and share, 2016-2024YTD
+:::
+
+- Nominal borrowing amounts for GS bonds follow an upward trend.
 
 - From Dashboard: By filtering countries on bar chart over time, we can see whether this trend is common to all countries within the region.
 
@@ -503,8 +510,6 @@ chart_borrowing_mix_kor.save(path_picture_mix)
     - But other countries such as SG, ID, PH, KH generally increases the issuance based on their own size of volume
 
 - But as the borrowing mix shows, notably the rate of these GS bonds are quite small as a percentage of overall borrowing volume.
-
-![Share of GS bonds in total bonds, 2016-2024YTD](picture/chart_mix.png){width=250}
 
 - Possible reasons:
 
