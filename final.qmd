@@ -94,7 +94,7 @@ alt.data_transformers.disable_max_rows()
 <!--1 Create df_epi -->
 
 ```{python} 
-#| echo: False
+#| include: False
 # Load 2024 epi dataset
 # path_cwd = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final")
 path_cwd = (r"C:\Users\LUIS\Documents\GitHub\final")
@@ -114,14 +114,14 @@ df_epi = df_epi[["iso", "country", "EPI.new"]].rename(
 ```
 
 ```{python} 
-#| echo: False
+#| include: False
 path_data = os.path.join(
     path_cwd, "data"
 )
 ```
 
 ```{python} 
-#| echo: False
+#| include: False
 # Add each year's result to the dataset from CSVs
 for year in range(2016, 2024, 2):
     path_epi_add = os.path.join(
@@ -193,7 +193,7 @@ df_epi = pd.concat([df_epi, df_epi_world_average, df_epi_asean3_average])
 ```
 
 ```{python} 
-#| echo: False
+#| include: False
 # Create new column of "EPI gap from World average"
 df_epi_average = pd.concat([df_epi_world_average, df_epi_asean3_average])
 
@@ -227,7 +227,7 @@ df_epi.to_csv(path_epi)
 <!--2 Create df_bonds_long -->
 
 ```{python} 
-#| echo: False
+#| include: False
 # Load local currency issuance dataset
 path_lcy_issuance = os.path.join(
     path_data, "breakdown of lcy bond market issuance.csv"
@@ -250,7 +250,7 @@ df_lcy_issuance = df_lcy_issuance.rename(columns={
 ```
 
 ```{python} 
-#| echo: False
+#| include: False
 # Load bond issuance datasets
 path_green_issuance = os.path.join(
     path_data, "green bonds issuance.csv"
@@ -306,7 +306,7 @@ df_bonds = df_bonds.loc[df_bonds["Date"] > 2015]
 ```
 
 ```{python} 
-#| echo: False
+#| include: False
 # Melt df for easier handling
 df_bonds_long = df_bonds.melt(
     id_vars=["Economy", "Date"],
@@ -358,7 +358,7 @@ df_bonds_long = df_bonds_long.rename(columns={"Date": "Year"})
 <!--3 Create closswalk -->
 
 ```{python} 
-#| echo: False
+#| include: False
 # Identify corresponding country name and iso in df_epi
 countries_epi = df_epi[~df_epi["Country Name"].isin(["Average (World)", "Average (ASEAN+3)"])][["Country Name", "iso"]].value_counts().reset_index(
 ).sort_values(
@@ -382,6 +382,7 @@ crosswalk = pd.concat([countries_bonds, countries_epi], axis=1)
 ```{python} 
 #| echo: False
 # Merge crosswalk to df_bonds_long
+
 df_bonds_long = df_bonds_long.merge(
     crosswalk,
     on="Economy",
@@ -390,7 +391,7 @@ df_bonds_long = df_bonds_long.merge(
 ```
 
 ```{python} 
-#| echo: False
+#| include: False
 # Merge DFs by Country Code and Date/Year
 df_base = df_bonds_long.merge(
     df_epi,
@@ -420,7 +421,7 @@ df_base.to_csv(path_base)
 <!--Plots on Bond issuance -->
 
 ```{python} 
-#| echo: False
+#| include: False
 # Set path to save pictures
 path_picture = os.path.join(
     path_cwd, "picture"
@@ -432,6 +433,7 @@ path_picture = os.path.join(
 ```{python} 
 #| echo: False
 #| output: False
+
 # Drop bonds with no label
 df_base_drop_lcy = df_base.dropna(subset="bond_label")
 
@@ -460,6 +462,7 @@ chart_bonds.save(path_picture_bonds)
 #| echo: False
 #| output: False
 # Drop 2024 data and label lcy issuance as "unlabeled bonds"
+
 df_base_drop_2024 = df_base.loc[df_base["Year"] != 2024]
 df_base_drop_2024["bond_label"] = df_base_drop_2024[
     "bond_label"].fillna("Unlabeled bonds")
@@ -522,6 +525,7 @@ chart_borrowing_mix_kor.save(path_picture_mix)
 ```{python} 
 #| echo: False
 #| output: False
+
 # Plot EPI over year, which includes averages contained in df_epi rows
 chart_epi = alt.Chart(df_epi).mark_line().encode(
     alt.X("Year:O", axis=alt.Axis(labelAngle=45)),
@@ -561,6 +565,7 @@ chart_epi.save(path_picture_epi)
 ```{python} 
 #| echo: False
 #| output: False
+
 # Plot each country's gap from World average over year
 chart_epi_gap = alt.Chart(df_base).mark_line().encode(
     alt.X("Year:O", axis=alt.Axis(labelAngle=45)),
@@ -614,6 +619,7 @@ chart_epi_gap.save(path_picture_epi_gap)
 ```{python} 
 #| echo: False
 #| output: False
+
 # Normalize bonds issuance amount (w/o lcy issuance) and EPI gap from world average
 df_base_normalized = df_base_drop_lcy.copy()
 
@@ -681,6 +687,7 @@ chart_with_trend.save(path_picture_trend)
 - In the South Korea example, we can see that EPI scores remain stagnant despite a rise in GS bond issuance volume.
 
 ![Linear Regression on time series data - South Korea (Consolidated issuance volume, EPI score, 2016-2024)](picture/chart_with_trend.png){width=250}
+
 
 - From Dashboard: We can select each country and make the trend comparison for each.
 
