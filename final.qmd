@@ -18,63 +18,39 @@ include-before-body:
     }
 ---
 
-# Group member
+## Group members
 
-- Luis Señires(username: ldsenires, section: 1)
+- Luis Señires (username: ldsenires, section: 1)
 
-- Hiroaki Kurachi(username: hirokurachi, section: 2)
+- Hiroaki Kurachi (username: hirokurachi, section: 2)
 
 <!-- The primary purpose of this writeup is to inform us of what we are reading before we look at your code. -->
 
-# Background
+## Background
 
 - Green, Social, and Sustainability Bonds
-    - Financial securities issued by organizations to raise funding for a portfolio of projects...
-
-    - ...that are expected to generate “green” or “social” (or both!) benefits
-
-    - Borrowers are expected to provide allocation and impact reports
+    - Financial securities issued by organizations to raise funding for a portfolio of projects that are expected to generate “green” or “social” (or both) benefits
 
 - Environmental Performance Index (EPI)
-    - Provided by Yale and Columbia
+    - A scoring system by Yale and Columbia to rank 180 countries on climate change performance, environmental health, and ecosystem vitality
 
-    - Uses 58 performance indicators across 11 issue categories
-
-    - Ranks 180 countries on climate change performance, environmental health, and ecosystem vitality
-
-# Research question
+## Research question
 <!--Describe your research question-->
 
 - What is the relationship between the amount of debt funding raised through Green and Sustainability (GS) bonds and a country’s EPI score?
 
-# Approach
+## Approach
 <!--Then discuss the approach you took and the coding involved, including discussing any weaknesses or difficulties encountered -->
 
-- Dataset 1: GS Bond issuances
+- Dataset 1: GS Bond issuances (taken from ADB AsianBondsOnline portal)
 
-    - GS bond issuance volumes (USD millions)
+    - Contains GS bond and total local currency bond issuance volumes (USD millions)
 
-    - Total local currency bond issuance volumes (USD millions)
+    - Limited to ASEAN+3 economies (dropped China as outlier)
 
-        - We could not find consolidated data for foreign currency bond issuance volumes which would have been important in calculating a more accurate borrowing mix profile
+- Dataset 2: EPI (taken from Yale EPI website)
 
-    - Broken down per issuer (Government and Corporate) and bond label (Green and Sustainability)
-
-    - Limited to ASEAN+3 economies
-
-        - droped China as outlier
-
-    - Taken from the Asian Development Bank’s AsianBondsOnline portal
-
-- Dataset 2: EPI
-
-    - Aggregated into a score
-
-    - Comprehensively covers a wide range of environmental issues, not just a single or limited issues
-    
-    - Though this analysis is focused on ASEAN+3, dataset contains global information which can be useful especially when comparing against world standards
-
-    - Two-year time horizon which does not directly match Bond data
+    - Contains aggregated EPI score (two-year time horizon)
 
 ```{python} 
 #| echo: False 
@@ -413,10 +389,10 @@ df_base.to_csv(path_base)
 ```
 
 
-# Findings
+## Findings
 <!-- Display static plots, briefly discribe then and our Shiny App -->
 
-## Rising issuance volume
+1. Nominal borrowing amounts for GS bonds follow an upward trend.
 
 <!--Plots on Bond issuance -->
 
@@ -501,8 +477,6 @@ chart_borrowing_mix_kor.save(path_picture_mix)
 Bonds issuance volume and share, 2016-2024YTD
 :::
 
-- Nominal borrowing amounts for GS bonds follow an upward trend.
-
 - From Dashboard: By filtering countries on bar chart over time, we can see whether this trend is common to all countries within the region.
 
     - JP, SK contributes to forming the trend with large and increasing volume
@@ -521,7 +495,7 @@ Bonds issuance volume and share, 2016-2024YTD
 
     - More generally, to meet higher deficit requirements initially caused by the COVID-19 pandemic
 
-## Global downtrend in EPI
+2. There is a regional (and global) drop in EPI scores, followed by a slight recovery in 2024.
 
 <!--Plot EPI-->
 
@@ -605,8 +579,6 @@ path_picture_epi_gap = os.path.join(
 chart_epi_gap.save(path_picture_epi_gap)
 ```
 
-- There is a regional (and global) drop in EPI scores, followed by a slight recovery in 2024.
-
 ![EPI scores, 2016-2024](picture/chart_epi.png){width=250}
 
 - From Dashboard: We can switch from using nominal EPI to EPI gap from world average to compare the scores relative to a global benchmark. As we see the relative performance of each countries, the scores of ASEAN+3 countries other than JP, SK and SG are lower than the average, and the whole ASEAN+3 trend is still on downtrend.
@@ -617,7 +589,7 @@ chart_epi_gap.save(path_picture_epi_gap)
 
     - More developments focused on economic growth rather than environmental targets
 
-## Weak to negative relation between the two variables
+3. In the South Korea example, we can see that EPI scores remain stagnant despite a rise in GS bond issuance volume.
 
 <!-- plot for association btw/n Bonds and EPI -->
 
@@ -689,22 +661,11 @@ path_picture_trend = os.path.join(
 chart_with_trend.save(path_picture_trend)
 ```
 
-- In the South Korea example, we can see that EPI scores remain stagnant despite a rise in GS bond issuance volume.
-
 ![Linear Regression on time series data - South Korea (Consolidated issuance volume, EPI score, 2016-2024)](picture/chart_with_trend.png){width=250}
-
 
 - From Dashboard: We can select each country and make the trend comparison for each.
 
-- Linear regression on time series data to draw trend lines
-
-- Normalized data for more meaningful comparison
-
-    - Bonds are expressed in USD millions
-
-    - EPI scores are 0 to 100
-
-# Summary and areas for further research
+## Summary and areas for further research
 <!-- Finish with a discussion of directions for future work -->
 
 - Summary
