@@ -26,7 +26,7 @@ include-before-body:
 
 <!-- The primary purpose of this writeup is to inform us of what we are reading before we look at your code. -->
 
-# Back ground
+# Background
 
 - Green, Social, and Sustainability Bonds
     - Financial securities issued by organizations to raise funding for a portfolio of projects...
@@ -45,16 +45,18 @@ include-before-body:
 # Research question
 <!--Describe your research question-->
 
-- What is the relationship between the amount of funding raised through Green and Sustainability bonds and a country’s EPI score?
+- What is the relationship between the amount of debt funding raised through Green and Sustainability (GS) bonds and a country’s EPI score?
 
 # Approach
 <!--Then discuss the approach you took and the coding involved, including discussing any weaknesses or difficulties encountered -->
 
-- Dataset 1: Bond issuances
+- Dataset 1: GS Bond issuances
 
-    - Green and Sustainability bond issuance volumes (USD millions)
+    - GS bond issuance volumes (USD millions)
 
     - Total local currency bond issuance volumes (USD millions)
+
+        - We could not find consolidated data for foreign currency bond issuance volumes which would have been important in calculating a more accurate borrowing mix profile
 
     - Broken down per issuer (Government and Corporate) and bond label (Green and Sustainability)
 
@@ -76,6 +78,7 @@ include-before-body:
 
 ```{python} 
 #| echo: False 
+#| output: False
 # Import required packages.
 import os
 import altair as alt
@@ -93,8 +96,8 @@ alt.data_transformers.disable_max_rows()
 ```{python} 
 #| echo: False
 # Load 2024 epi dataset
-path_cwd = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final")
-# path_cwd = (r"C:\Users\LUIS\Documents\GitHub\final")
+# path_cwd = (r"C:\Users\hkura\Documents\Uchicago\04 2024 Autumn\Python2\final")
+path_cwd = (r"C:\Users\LUIS\Documents\GitHub\final")
 
 path_epi_raw = os.path.join(
     path_cwd, r"data\index"
@@ -378,7 +381,7 @@ crosswalk = pd.concat([countries_bonds, countries_epi], axis=1)
 
 ```{python} 
 #| echo: False
-# Merge crosswalk to df_bonds
+# Merge crosswalk to df_bonds_long
 df_bonds_long = df_bonds_long.merge(
     crosswalk,
     on="Economy",
@@ -427,14 +430,15 @@ path_picture = os.path.join(
 <!--1 Bond issuance over time-->
 
 ```{python} 
-# | echo: False
+#| echo: False
+#| output: False
 # Drop bonds with no label
 df_base_drop_lcy = df_base.dropna(subset="bond_label")
 
 # Plot issuances per year
 chart_bonds = alt.Chart(df_base_drop_lcy).mark_bar().encode(
     alt.X("Year:O", axis=alt.Axis(labelAngle=45)),
-    alt.Y("amount:Q"),
+    alt.Y("amount:Q", title="Amount (in USD millions)"),
     alt.Color("Country Name:N")
 ).properties(
     width=500,
@@ -453,11 +457,12 @@ chart_bonds.save(path_picture_bonds)
 <!--2 Borrowing mix-->
 
 ```{python} 
-# | echo: False
-# Drop 2024 data and label lcy issuance as "unrelated bonds"
+#| echo: False
+#| output: False
+# Drop 2024 data and label lcy issuance as "unlabeled bonds"
 df_base_drop_2024 = df_base.loc[df_base["Year"] != 2024]
 df_base_drop_2024["bond_label"] = df_base_drop_2024[
-    "bond_label"].fillna("unrelated bonds")
+    "bond_label"].fillna("Unlabeled bonds")
 
 # Plot borrowing mix, for instance of Korea
 chart_borrowing_mix_kor = alt.Chart(df_base_drop_2024).transform_filter(
@@ -484,30 +489,29 @@ path_picture_mix = os.path.join(
 chart_borrowing_mix_kor.save(path_picture_mix)
 ```
 
+- Nominal borrowing amounts for GS bonds follow an upward trend.
 
-- Upward trending (in nominal terms)
+![Consolidated issuance volume, 2016-2024YTD](picture/chart_bonds.png){width=250}
 
-![Consolidated issuance volume, 2016 - 2024YTD](picture/chart_bonds.png){width=200}
-
-- From Dashboard: By filtering countries on bar chart over time, we can see whethre this trend is common in this area or not.
+- From Dashboard: By filtering countries on bar chart over time, we can see whether this trend is common to all countries within the region.
 
     - JP, SK contributes to forming the trend with large and increasing volume
 
     - But other countries such as SG, ID, PH, KH generally increases the issuance based on their own size of volume
 
-- But as the parcentage bar chart shows, notably the rate of these G+S bonds are quite small in the total bonds volume.
+- But as the borrowing mix shows, notably the rate of these GS bonds are quite small as a percentage of overall borrowing volume.
 
-![Share of G + S bonds in total bonds, 2016 - 2024](picture/chart_mix.png){width=200}
+![Share of GS bonds in total bonds, 2016-2024YTD](picture/chart_mix.png){width=250}
 
 - Possible reasons:
 
-    - Paris commitments
+    - To fund projects that will help countries meet their nationally determined contributions under the Paris Agreement.
 
-    - Energy crisis due to geopolitical conflicts
+    - To explore alternative indigenous energy sources in response to a looming energy crisis exacerbated by geopolitical conflicts
 
-    - Growth of ESG market segment
+    - To take advantage of the growth of capital markets dedicated to Environment, Social, and Governance (ESG)
 
-    - More generally, higher deficits due to the pandemic
+    - More generally, to meet higher deficit requirements initially caused by the COVID-19 pandemic
 
 ## Global downtrend in EPI
 
@@ -517,6 +521,7 @@ chart_borrowing_mix_kor.save(path_picture_mix)
 
 ```{python} 
 #| echo: False
+#| output: False
 # Plot EPI over year, which includes averages contained in df_epi rows
 chart_epi = alt.Chart(df_epi).mark_line().encode(
     alt.X("Year:O", axis=alt.Axis(labelAngle=45)),
@@ -555,6 +560,7 @@ chart_epi.save(path_picture_epi)
 
 ```{python} 
 #| echo: False
+#| output: False
 # Plot each country's gap from World average over year
 chart_epi_gap = alt.Chart(df_base).mark_line().encode(
     alt.X("Year:O", axis=alt.Axis(labelAngle=45)),
@@ -589,47 +595,52 @@ path_picture_epi_gap = os.path.join(
 chart_epi_gap.save(path_picture_epi_gap)
 ```
 
-- Regional (and global) drop in EPI scores
+- There is a regional (and global) drop in EPI scores, followed by a slight recovery in 2024.
 
-![EPI scores, 2016 - 2024](picture/chart_epi.png){width=200}
+![EPI scores, 2016-2024](picture/chart_epi.png){width=250}
 
-- From Dashboard: We can also convert the nominal values into the gap from world average. As we see the relative performance of each countries, the scores of ASEAN+3 countries other than JP, SK and SG are lower than the average. And the whole ASEAN+3 trend is still on downtrend.
+- From Dashboard: We can switch from using nominal EPI to EPI gap from world average to compare the scores relative to a global benchmark. As we see the relative performance of each countries, the scores of ASEAN+3 countries other than JP, SK and SG are lower than the average, and the whole ASEAN+3 trend is still on downtrend.
 
 - Possible reasons:
 
-    - Higher standards for performance
+    - Shift in scoring criteria that require higher standards for performance
 
     - More developments focused on economic growth rather than environmental targets
 
-## Weak to negative relation 
+## Weak to negative relation between the two variables
 
 <!-- plot for association btw/n Bonds and EPI -->
 
 ```{python} 
 #| echo: False
+#| output: False
 # Normalize bonds issuance amount (w/o lcy issuance) and EPI gap from world average
 df_base_normalized = df_base_drop_lcy.copy()
 
-df_base_normalized["amount_norm"] = (df_base_normalized["amount"] - df_base_normalized["amount"].min()) / (df_base_normalized["amount"].max() - df_base_normalized["amount"].min())
+df_base_normalized["amount_norm"] = (df_base_normalized["amount"] - df_base_normalized["amount"].min()) / (
+    df_base_normalized["amount"].max() - df_base_normalized["amount"].min())
 
-df_base_normalized["EPI_gap_norm"] = (df_base_normalized["EPI gap from World average"] - df_base_normalized["EPI gap from World average"].min()) / (df_base_normalized["EPI gap from World average"].max() - df_base_normalized["EPI gap from World average"].min())
+df_base_normalized["EPI_gap_norm"] = (df_base_normalized["EPI gap from World average"] - df_base_normalized["EPI gap from World average"].min()) / (
+    df_base_normalized["EPI gap from World average"].max() - df_base_normalized["EPI gap from World average"].min())
 
 # Melt df by variable bonds issuance and EPI gap, so that plot can distinguish colors
 df_base_normalized = df_base_normalized.melt(
-            id_vars=["Country Name", "Year"],
-            value_vars=["amount_norm", "EPI_gap_norm"],
-            var_name="Variables",
-            value_name="Bonds / EPI Changes (normalized)"
+    id_vars=["Country Name", "Year"],
+    value_vars=["amount_norm", "EPI_gap_norm"],
+    var_name="Variables",
+    value_name="Bonds / EPI Changes (normalized)"
 ).dropna()
 
 # Aggregate bond issuances amount per country and year (from separated values for each label)
-normalized_amount = df_base_normalized[df_base_normalized["Variables"] == "amount_norm"]
+normalized_amount = df_base_normalized[df_base_normalized["Variables"]
+                                       == "amount_norm"]
 normalized_amount = normalized_amount.groupby(["Country Name", "Year", "Variables"]).agg(
     result=("Bonds / EPI Changes (normalized)", "sum")
 ).reset_index().rename({"result": "Bonds / EPI Changes (normalized)"}, axis=1)
 
 # Reconcaterate both data for bonds issuance and EPI gap
-normalized_epi = df_base_normalized[df_base_normalized["Variables"] == "EPI_gap_norm"]
+normalized_epi = df_base_normalized[df_base_normalized["Variables"]
+                                    == "EPI_gap_norm"]
 df_base_normalized = pd.concat([normalized_epi, normalized_amount])
 
 # Plot issuances per year
@@ -647,8 +658,8 @@ chart_variables = alt.Chart(df_base_normalized).mark_point().transform_filter(
 trend_line = alt.Chart(df_base_normalized).mark_line().transform_filter(
     alt.FieldEqualPredicate(field="Country Name", equal="South Korea")
 ).transform_regression(
-    "Year", 
-    "Bonds / EPI Changes (normalized)", 
+    "Year",
+    "Bonds / EPI Changes (normalized)",
     groupby=["Variables"],
     method="linear"
 ).encode(
@@ -667,11 +678,11 @@ path_picture_trend = os.path.join(
 chart_with_trend.save(path_picture_trend)
 ```
 
-- Plot example: South Korea
+- In the South Korea example, we can see that EPI scores remain stagnant despite a rise in GS bond issuance volume.
 
-![Linear Regression on time series data (Consolidated issuance volume, EPI score, 2016 - 2024](picture/chart_combined_with_trend.png){width=200}
+![Linear Regression on time series data - South Korea (Consolidated issuance volume, EPI score, 2016-2024)](picture/chart_with_trend.png){width=250}
 
-- From Dashboard: we can see other countries' result
+- From Dashboard: We can select each country and make the trend comparison for each.
 
 - Linear regression on time series data to draw trend lines
 
@@ -685,16 +696,16 @@ chart_with_trend.save(path_picture_trend)
 <!-- Finish with a discussion of directions for future work -->
 
 - Summary
-    - Lower scores observed despite higher issuance volumes
+    - Lower scores are observed despite higher GS issuance volumes.
 
-    - Possible that EPI scores would have decreased even more if not for these investments
+    - It is possible that EPI scores would have decreased even more if not for these investments.
 
-    - Could be a signal of “greenwashing”
+    - This could be a signal of “greenwashing" which refers to bond issuers using the GS label to oversell their environmental commitments to raise funding.
 
 - Areas for further research
-    - Use of project-level data or more specific categorization of use of proceeds
+    - Use of project-level data or more specific categorization of use of proceeds to derive a more accurate relationship between funds raised and specific projects funded.
 
-    - Other potential determinants of EPI scores (e.g. GDP, specific investments into renewable energy, etc.)
+    - Explore other potential determinants of EPI scores (e.g. GDP, specific investments into renewable energy, etc.) to help explain observed EPI trends.
 
-    - Other peer comparisons aside from region
+    - Make relevant peer comparisons between economies based on other factors aside from region (e.g. emerging economies)
 
